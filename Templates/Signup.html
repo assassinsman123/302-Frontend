@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign up</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
@@ -13,24 +14,30 @@
 
     <form method="POST">
       <div class="input-row">
-        <input type="text" name="first_name" placeholder="First Name" required>
-        <input type="text" name="last_name" placeholder="Last Name" required>
+        <label for="first_name">First Name</label>
+        <input type="text" id="first_name" name="first_name" placeholder="First Name" required>
+
+        <label for="last_name">Last Name</label>
+        <input type="text" id="last_name" name="last_name" placeholder="Last Name" required>
       </div>
 
-      <input type="email" name="email" placeholder="Email" required>
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="Email" required>
 
       <div class="password-row">
-        <input type="password" name="password" id="password" placeholder="Password" required>
-        <span onclick="togglePassword('password')" class="toggle">👁</span>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+        <span class="toggle" data-target="password">👁</span>
       </div>
 
       <div class="password-row">
-        <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required>
-        <span onclick="togglePassword('confirm_password')" class="toggle">👁</span>
+        <label for="confirm_password">Confirm Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+        <span class="toggle" data-target="confirm_password">👁</span>
       </div>
 
       <button type="submit">Create an account</button>
-      <p>Already have an account? <a href="/login">Login</a></p>
+      <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
     </form>
   </div>
 </body>

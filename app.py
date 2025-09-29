@@ -8,7 +8,8 @@ app.secret_key = "your_secret_key"  # Change this in production
 def index():
     return redirect(url_for('login'))
 
-# Signup
+
+# Signup Route
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == "POST":
@@ -28,7 +29,8 @@ def signup():
 
     return render_template('signup.html')
 
-# Login
+
+# Login Route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == "POST":
@@ -46,7 +48,19 @@ def login():
 
     return render_template("login.html")
 
-# Dashboard (Protected Page)
+
+# Forgot Password Route
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        # Add logic to handle password reset (e.g., send an email)
+        flash("If this email exists, a password reset link has been sent.", "info")
+        return redirect(url_for('login'))
+    return render_template('forgot_password.html')
+
+
+# Dashboard Route (Protected Page)
 @app.route('/dashboard')
 def dashboard():
     if "user" not in session:
@@ -54,12 +68,14 @@ def dashboard():
         return redirect(url_for("login"))
     return f"Welcome, {session['user']}! <br><a href='/logout'>Logout</a>"
 
-# Logout
+
+# Logout Route
 @app.route('/logout')
 def logout():
     session.pop("user", None)
     flash("You have been logged out.", "info")
     return redirect(url_for("login"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
