@@ -59,6 +59,13 @@ def forgot_password():
         return redirect(url_for('login'))
     return render_template('ForgotPassword.html')
 
+@app.route('/products')
+def products():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('Products.html')
+
+
 
 # Dashboard Route (Protected Page)
 @app.route('/dashboard')
