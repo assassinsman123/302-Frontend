@@ -57,7 +57,7 @@ def forgot_password():
         # Add logic to handle password reset (e.g., send an email)
         flash("If this email exists, a password reset link has been sent.", "info")
         return redirect(url_for('login'))
-    return render_template('forgot_password.html')
+    return render_template('ForgotPassword.html')
 
 
 # Dashboard Route (Protected Page)
