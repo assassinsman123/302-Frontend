@@ -141,6 +141,16 @@ a:hover {
   cursor: pointer;
   background: #f0f0f0;
   border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
+
+}
+.nav-left .btn:hover {
+   transform: translateY(-2px);
+   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
+
 }
 
 .nav-left .btn.active {

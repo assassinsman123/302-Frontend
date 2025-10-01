@@ -73,11 +73,12 @@ def products():
         {"name": "Laptop", "price": "120", "image": "https://via.placeholder.com/150"},
         {"name": "T-Shirt", "price": "15", "image": "https://via.placeholder.com/150"},
         {"name": "Smartphone", "price": "99", "image": "https://via.placeholder.com/150"},
-        {"name": "Name", "price": "99", "image": "https://via.placeholder.com/150"},
+        {"name": "Pants", "price": "20", "image": "https://via.placeholder.com/150"},
     ]
     return render_template('Products.html', products=product_list)  # Pass products to the template
 
-
+@app.route('/upload', methods=['GET', 'POST'])
+    
 
 # Dashboard Route (Protected Page)
 @app.route('/dashboard')
