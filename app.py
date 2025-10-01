@@ -66,7 +66,17 @@ def products():
     if 'user' not in session:  # Check if the user is logged in
         flash("Please log in to access the products page.", "warning")
         return redirect(url_for('index'))
-    return render_template('Products.html')
+    
+    product_list = [
+        {"name": "Smart Watches", "price": "$89", "image": "https://via.placeholder.com/150"},
+        {"name": "shoes",  "price": "$59", "image": "https://via.placeholder.com/150"},
+        {"name": "Laptop", "price": "120", "image": "https://via.placeholder.com/150"},
+        {"name": "T-Shirt", "price": "15", "image": "https://via.placeholder.com/150"},
+        {"name": "Smartphone", "price": "99", "image": "https://via.placeholder.com/150"},
+        {"name": "Name", "price": "99", "image": "https://via.placeholder.com/150"},
+    ]
+    return render_template('Products.html', products=product_list)  # Pass products to the template
+
 
 
 # Dashboard Route (Protected Page)
