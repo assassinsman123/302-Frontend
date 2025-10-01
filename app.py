@@ -31,8 +31,8 @@ def signup():
 
 
 # Login Route
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/index', methods=['GET', 'POST'])
+def index():
     if request.method == "POST":
         email = request.form['email']
         password = request.form['password']
@@ -41,12 +41,12 @@ def login():
         if email == "test@example.com" and password == "password":
             session['user'] = email  # Store user session
             flash("Login successful!", "success")
-            return redirect(url_for('Products'))  # Redirect to the products page
+            return redirect(url_for('products'))  # Redirect to the products page
         else:
             flash("Invalid email or password!", "danger")
-            return redirect(url_for('login'))
+            return redirect(url_for('index'))
 
-    return render_template("login.html")
+    return render_template("Index.html")
 
 # Forgot Password Route
 @app.route('/forgot_password', methods=['GET', 'POST'])
@@ -55,7 +55,7 @@ def forgot_password():
         email = request.form['email']
         # Add logic to handle password reset (e.g., send an email)
         flash("If this email exists, a password reset link has been sent.", "info")
-        return redirect(url_for('login'))
+        return redirect(url_for('index'))
     return render_template('ForgotPassword.html')
 
 # Products Page
@@ -82,7 +82,7 @@ def dashboard():
 def logout():
     session.pop("user", None)
     flash("You have been logged out.", "info")
-    return redirect(url_for("login"))
+    return redirect(url_for('index'))
 
 
 if __name__ == "__main__":
