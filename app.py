@@ -37,17 +37,16 @@ def login():
         email = request.form['email']
         password = request.form['password']
 
-        # Simulate login validation (no database)
+        # Simulate login validation (replace with actual database logic)
         if email == "test@example.com" and password == "password":
-            session['user'] = email
+            session['user'] = email  # Store user session
             flash("Login successful!", "success")
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('Products'))  # Redirect to the products page
         else:
             flash("Invalid email or password!", "danger")
             return redirect(url_for('login'))
 
     return render_template("login.html")
-
 
 # Forgot Password Route
 @app.route('/forgot_password', methods=['GET', 'POST'])
@@ -59,9 +58,11 @@ def forgot_password():
         return redirect(url_for('login'))
     return render_template('ForgotPassword.html')
 
+# Products Page
 @app.route('/products')
 def products():
-    if 'user_id' not in session:
+    if 'user' not in session:  # Check if the user is logged in
+        flash("Please log in to access the products page.", "warning")
         return redirect(url_for('login'))
     return render_template('Products.html')
 

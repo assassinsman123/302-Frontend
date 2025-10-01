@@ -7,20 +7,19 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="navbar">
-    <h2>Marketplace</h2>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <h2>Marketplace</h2>
+      <button class="btn">Sell</button>
+      <button class="btn active">Categories</button>
     </div>
-  </div>
+    <div class="nav-right">
+      <!-- User Icon - Logout -->
+      <a href="{{ url_for('logout') }}" class="user-icon" title="Logout">👤 Logout</a>
+      <!-- Search -->
+      <span class="search-icon">🔍</span>
     </div>
-  </div>
+  </nav>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
