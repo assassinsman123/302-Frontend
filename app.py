@@ -5,8 +5,8 @@ app.secret_key = "your_secret_key"  # Change this in production
 
 
 @app.route('/')
-def index():
-    return redirect(url_for('login'))
+def home():  # Renamed this function to avoid conflict
+    return redirect(url_for('index'))
 
 
 # Signup Route
@@ -25,7 +25,7 @@ def signup():
 
         # Simulate user creation (no database)
         flash("Account created successfully! Please log in.", "success")
-        return redirect(url_for('login'))
+        return redirect(url_for('index'))
 
     return render_template('signup.html')
 
@@ -48,6 +48,7 @@ def index():
 
     return render_template("Index.html")
 
+
 # Forgot Password Route
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
@@ -58,14 +59,14 @@ def forgot_password():
         return redirect(url_for('index'))
     return render_template('ForgotPassword.html')
 
+
 # Products Page
 @app.route('/products')
 def products():
     if 'user' not in session:  # Check if the user is logged in
         flash("Please log in to access the products page.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('index'))
     return render_template('Products.html')
-
 
 
 # Dashboard Route (Protected Page)
@@ -73,7 +74,7 @@ def products():
 def dashboard():
     if "user" not in session:
         flash("Please log in first.", "warning")
-        return redirect(url_for("login"))
+        return redirect(url_for("index"))
     return f"Welcome, {session['user']}! <br><a href='/logout'>Logout</a>"
 
 
