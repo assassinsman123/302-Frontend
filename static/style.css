@@ -213,6 +213,57 @@ a:hover {
    color: #333;
 }
 
+/* Upload Form*/
+.upload-form {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+.upload-form form {
+  display: flex;
+  flex-direction: column;
+}
+.upload-form label {
+  margin: 10px 0 5px;
+  font-size: 14px;
+  color: #333;
+}
+.upload-form input,
+.upload-form textarea {
+   padding:10px;
+   margin-bottom: 15px;
+   border: 1px solid #ddd;
+   border-radius: 8px;
+   font-size: 14px;
+   width: 100%;
+}
+.upload-form textarea {
+  resize: vertical;
+  height: 100px;
+}
+
+.upload-form input[type="file"] {
+  padding: 5px;
+}
+
+.upload-form button {
+  padding: 12px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s ease;
+}
+.upload-form button:hover {
+  background: #333;
+}
+
+
 /* Responsive Design */
 @media (max-width: 500px) {
     .container {

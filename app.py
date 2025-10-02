@@ -77,8 +77,33 @@ def products():
     ]
     return render_template('Products.html', products=product_list)  # Pass products to the template
 
-@app.route('/upload', methods=['GET', 'POST'])
+
+# Upload Route
+app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    if "user" not in session:
+        flash("please log in to upload a product.", "warning")
+        return redirect(url_for("index"))
     
+    if request.method == "POST":
+        title = request.form['title']
+        price = request.form['price']
+        category = request.form['category']
+        condition = request.form['condition']
+        features = request.form['features']
+        image = request.files['image']
+        
+    if image:
+        image.save(f'static/uploads/{image.filename}')
+        flash("Product '{title} uploaded successfully!", "success")
+    else:
+        flash("Please upload an image.", "danger")
+        return redirect(url_for('upload'))
+    
+    return redirect(url_for('products'))
+    
+    return render_template('Upload.html')
+       
 
 # Dashboard Route (Protected Page)
 @app.route('/dashboard')

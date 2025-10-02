@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Review Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    
+    <body>
+       <div class="container">
+        <h1>{{product[1]}}</h1>
+        <p>Price: {{product[2]}}</p>
+        <p>Description: {{product[3]}}</p>
+
+    <h2>Submit a Review</h2>
+    <form method="POST">
+     <label for="rating">Rating (1-5):</label>
+     <input type="number" id="rating" name="rating" min="1" max="5" required>
+     <label for= "comment">Comment:</label>
+     <textarea id="comment" name="comment" required></textarea>
+     <button type="submit">Submit Review</button>
+    </form>
+
+    <h2>Reviews</h2>
+    {%for review in reviews%}
+    <div class="review">
+    <p><strong>{{review[0]}} </strong> (Rating: {{review[1]}})
+    <p>{{review[2]}}</p>
+    </div>
+    {%endfor%}
+    </div>
+    </body>
+</html>
+
+
+        
+

@@ -15,11 +15,29 @@
       <a href="{{ url_for('logout') }}" class="user-icon">👤 Logout</a>
     </div>
   </nav>
+  <!-- Upload Form -->
   <div class="container">
     <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
-        <label for="title">title:</label>
+        <label for="title">Title:</label>
         <input type="text" id="title" name="title" placeholder="Enter product title" required>
 
         <label for="price">Price</label>
+        <input type="text" id="price" name="price" placeholder="Enter product price" required>
 
-        
+        <label for="catergory">Category</label>
+        <input type="text" id="category" name="category" placeholder="Enter product category" required>
+
+        <label for="condition">Condidtion</label>
+        <input type="text" id="condition" name="condition" placeholder="Enter product condition" required>
+
+        <label for="features">Features</label>
+        <input type="text" id="features" name="features" placeholder="Enter product features" required>
+
+        <label for="image">Image</label>
+        <input type="file" id="image" name="image" accept="image/*" required>
+
+       <button type="submit" class="btn">Upload</button>
+    </form>
+  </div>
+</body>
+</html>
