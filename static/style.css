@@ -183,17 +183,18 @@ a:hover {
 /* Product Grid */
 .products {
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 .product{
-  text-align: center;
+  display: flex;
+  align-items: center;
   border: 1px solid #ddd;
   border-radius: 10px;
-  padding:15px;
+  padding: 10px;
   background: white;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s,ease,box-shadow 0.2s ease;
@@ -203,15 +204,32 @@ a:hover {
   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
 }
 .product img{
-  max-width: 100%;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
   border-radius: 10px;
-  margin-bottom: 10px;
+  margin-right: 15px;
 }
-.product p{
-   margin: 5px 0;
-   font-size: 16px;
-   color: #333;
+.product-info{
+  display: flex;
+  flex-direction: column;
 }
+.product-name{
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0;
+  color: #333;
+}
+.product-price{
+   font-size: 14px;
+   color: #666;
+   margin: 5px 0 0;
+}
+.product:hover .product-name,
+.product:hover .product-price{
+  color: #007BFF; /* Change text color on hover */
+}
+
 
 /* Upload Form*/
 .upload-form {
