@@ -281,6 +281,60 @@ a:hover {
   background: #333;
 }
 
+/* Item Message page */
+.item-message-container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.item-image img {
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.message-box {
+  width:100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message-box input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+}
+.message-box button {
+  padding: 10%;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s ease;
+}
+.message-box button:hover {
+  background: #333;
+}
+.icons {
+  display: flex;
+  gap: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
 
 /* Responsive Design */
 @media (max-width: 500px) {

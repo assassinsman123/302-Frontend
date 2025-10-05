@@ -68,12 +68,12 @@ def products():
         return redirect(url_for('index'))
     
     product_list = [
-        {"name": "Smart Watches", "price": "$89", "image": "https://via.placeholder.com/150"},
-        {"name": "shoes",  "price": "$59", "image": "https://via.placeholder.com/150"},
-        {"name": "Laptop", "price": "120", "image": "https://via.placeholder.com/150"},
-        {"name": "T-Shirt", "price": "15", "image": "https://via.placeholder.com/150"},
-        {"name": "Smartphone", "price": "99", "image": "https://via.placeholder.com/150"},
-        {"name": "Pants", "price": "20", "image": "https://via.placeholder.com/150"},
+        {"id": 1, "name": "Smart Watches", "price": "$89", "image": "uploads/daniel-korpai-hbTKIbuMmBI-unsplash.jpg"},
+        {"id": 2, "name": "Shoes", "price": "$59", "image": "uploads/xavier-teo-SxAXphIPWeg-unsplash.jpg"},
+        {"id": 3, "name": "Laptop", "price": "$120", "image": "uploads/kompjuteri-com-Saj5h85DbOs-unsplash.jpg"},
+        {"id": 4, "name": "T-Shirt", "price": "$15", "image": "uploads/ryan-hoffman-6Nub980bI3I-unsplash.jpg"},
+        {"id": 5, "name": "Smartphone", "price": "$99", "image": "uploads/shiwa-id-Uae7ouMw91A-unsplash.jpg"},
+        {"id": 6, "name": "Pants", "price": "$20", "image": "uploads/matthew-moloney-YeGao3uk8kI-unsplash.jpg"},
     ]
     return render_template('Products.html', products=product_list)  # Pass products to the template
 
@@ -103,6 +103,28 @@ def upload():
     return redirect(url_for('products'))
     
     return render_template('Upload.html')
+
+# Review Route
+@app.route('/review', methods=['GET', 'POST'])
+def review():
+    if "user" not in session:
+        flash("Please log in to submit a review.", "warning")
+        return redirect(url_for("index"))
+    
+    if request.method == "POST":
+        rating = request.form['rating']
+        comment = request.form['comment']
+        flash("Thank you for your review!", "success")
+        return redirect(url_for('products'))
+    
+    return render_template('review.html')
+
+@app.route('/item/<int:item_id>/message', methods=['GET', 'POST'])
+def message_seller(item_id):
+    if "user" not in session:
+        flash("Please log in to send a message.", "warning")
+        return redirect(url_for("index"))
+
        
 
 # Dashboard Route (Protected Page)

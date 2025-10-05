@@ -21,13 +21,17 @@
       <span class="search-icon">🔍</span>
     </div>
   </nav>
-  <!--products grid-->
+  <!-- Products Grid -->
   <div class="products">
-    {%for product in products%}
+    {% for product in products %}
     <div class="product">
-      <img src="{{product.image}}" alt="{{product.name}}">
-      <p>{{product.price}} {{product.name}}</p>
+      <img src="{{ product.image }}" alt="{{ product.name }}">
+      <div class="product-info">
+        <p class="product-name">{{ product.name }}</p>
+        <p class="product-price">{{ product.price }}</p>
+      </div>
     </div>
-    {%endfor%}
+    {% endfor %}
+  </div>
 </body>
 </html>

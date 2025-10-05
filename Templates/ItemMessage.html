@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Message Seller </title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<body>
+    <!--Navbar-->
+    <nav class="navbar">
+        <a href ="{{ url_for('products')}}"class="nav-left">← Back to Products</a>
+        <h2>Marketplace</h2>
+        <div class="user-icon">👤</div>
+    </nav>
+
+    <!--Item Message Container-->
+    <div class="item-message-container">
+
+    <!--Item Image-->
+    <div class="item-image">
+    <img src="{{ url_for('static', filename='uploads/' + item['image']) }}" alt="{{ item['name'] }}">
+    </div>
+
+    <!--Message Box-->
+    <div class="message-box">
+    <h2>send Message to Seller</h2>
+    <form action="#" method="POST">
+        <input type="text" name="message" placeholder="Hi, is this item available?" required>
+        <button type="submit">send</button>
+    </form>
+    </div>
+
+    <!--Icons-->
+
+    <div class="icons">
+        <span>🔔</span>
+        <span>💾</span>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
