@@ -125,8 +125,11 @@ a:hover {
   justify-content: space-between;
   align-items: center;
   background: #fff;
-  padding: 15px 30px;
+  padding: 12px 30px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .nav-left h2 {
@@ -147,22 +150,44 @@ a:hover {
   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
 
 }
-.nav-left .btn:hover {
-   transform: translateY(-2px);
-   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
-
+.navbar-left .logo{
+  margin: 0;
+  font-size: 1.5rem;
 }
 
-.nav-left .btn.active {
-  background: black;
-  color: white;
-}
-
-.nav-right {
+.navbar-right {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
 }
+
+.btn{
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.btn:hover {
+  background-color: #666;
+}
+
+.btn.active {
+  background-color:#007BFF;
+
+}
+.search-btn {
+  background: #007BFF;
+  color: white;
+  border: none;
+  padding: 7px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
 
 .user-icon {
   text-decoration: none;
@@ -229,6 +254,7 @@ a:hover {
 .product:hover .product-price{
   color: #007BFF; /* Change text color on hover */
 }
+
 
 
 /* Upload Form*/

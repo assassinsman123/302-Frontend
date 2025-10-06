@@ -34,19 +34,12 @@ def signup():
 @app.route('/index', methods=['GET', 'POST'])
 def index():
     if request.method == "POST":
-        email = request.form['email']
-        password = request.form['password']
+        # Automatically log in the user and redirect to the products page
+        session['user'] = "guest_user"  # Set a default user session
+        flash("Login successful!", "success")
+        return redirect(url_for('products'))  # Redirect to the products page
 
-        # Simulate login validation (replace with actual database logic)
-        if email == "test@example.com" and password == "password":
-            session['user'] = email  # Store user session
-            flash("Login successful!", "success")
-            return redirect(url_for('products'))  # Redirect to the products page
-        else:
-            flash("Invalid email or password!", "danger")
-            return redirect(url_for('index'))
-
-    return render_template("Index.html")
+    return render_template("index.html")
 
 
 # Forgot Password Route
