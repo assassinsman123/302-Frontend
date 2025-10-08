@@ -1,9 +1,10 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Change this in production
 
-
+app.config
 @app.route('/')
 def home():  # Renamed this function to avoid conflict
     return redirect(url_for('index'))
@@ -56,44 +57,40 @@ def forgot_password():
 # Products Page
 @app.route('/products')
 def products():
-    if 'user' not in session:  # Check if the user is logged in
-        flash("Please log in to access the products page.", "warning")
-        return redirect(url_for('index'))
-    
-    product_list = [
-        {"id": 1, "name": "Smart Watches", "price": "$89", "image": "uploads/daniel-korpai-hbTKIbuMmBI-unsplash.jpg"},
-        {"id": 2, "name": "Shoes", "price": "$59", "image": "uploads/xavier-teo-SxAXphIPWeg-unsplash.jpg"},
-        {"id": 3, "name": "Laptop", "price": "$120", "image": "uploads/kompjuteri-com-Saj5h85DbOs-unsplash.jpg"},
-        {"id": 4, "name": "T-Shirt", "price": "$15", "image": "uploads/ryan-hoffman-6Nub980bI3I-unsplash.jpg"},
-        {"id": 5, "name": "Smartphone", "price": "$99", "image": "uploads/shiwa-id-Uae7ouMw91A-unsplash.jpg"},
-        {"id": 6, "name": "Pants", "price": "$20", "image": "uploads/matthew-moloney-YeGao3uk8kI-unsplash.jpg"},
+    products = [
+        {"name": "Smart Watch", "price": 89, "image": "uploads/smartwatch.jpg"},
+        {"name": "Shoes", "price": 59, "image": "uploads/shoes.jpg"},
+        {"name": "Laptop", "price": 120, "image": "uploads/laptop.jpg"},
+        {"name": "T-Shirts", "price": 15, "image": "uploads/tshirt.jpg"},
+        {"name": "Smart Phone", "price": 55, "image": "uploads/smartphone.jpg"},
+        {"name": "Pants", "price": 20, "image": "uploads/pants.jpg"},
     ]
-    return render_template('Products.html', products=product_list)  # Pass products to the template
-
+    return render_template('Products.html', products=products)
 
 # Upload Route
-app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if "user" not in session:
-        flash("please log in to upload a product.", "warning")
+        flash("Please log in to upload a product.", "warning")
         return redirect(url_for("index"))
     
     if request.method == "POST":
-        title = request.form['title']
-        price = request.form['price']
-        category = request.form['category']
-        condition = request.form['condition']
-        features = request.form['features']
-        image = request.files['image']
+        title = request.form.get('title')
+        price = request.form.get('price')
+        category = request.form.get('category')
+        condition = request.form.get('condition')
+        features = request.form.get('features')
+        image = request.files.get('image')
         
-    if image:
-        image.save(f'static/uploads/{image.filename}')
-        flash("Product '{title} uploaded successfully!", "success")
-    else:
-        flash("Please upload an image.", "danger")
-        return redirect(url_for('upload'))
-    
-    return redirect(url_for('products'))
+        if image and image.filename != "":
+            # Save the uploaded image to the static/uploads folder
+            image_path = f'static/uploads/{image.filename}'
+            image.save(image_path)
+            flash(f"Product '{title}' uploaded successfully!", "success")
+            return redirect(url_for('products'))
+        else:
+            flash("Please upload an image.", "danger")
+            return redirect(url_for('upload'))
     
     return render_template('Upload.html')
 
