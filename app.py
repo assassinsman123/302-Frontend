@@ -7,11 +7,11 @@ app.secret_key = "your_secret_key"  # Change this in production
 # Global list to store all products (default + uploaded)
 products_list = [
     {"name": "Smart Watch", "price": 89, "image": "images/daniel-korpai-hbTKIbuMmBI-unsplash.jpg"},
-    {"name": "Shoes", "price": 59, "image": "images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg"},
-    {"name": "Laptop", "price": 120, "image": "images/matthew-moloney-YeGao3uk8kI-unsplash.jpg"},
+    {"name": "Laptop", "price": 59, "image": "images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg"},
+    {"name": "Pants", "price": 120, "image": "images/matthew-moloney-YeGao3uk8kI-unsplash.jpg"},
     {"name": "T-Shirts", "price": 15, "image": "images/ryan-hoffman-6Nub980bI3I-unsplash.jpg"},
     {"name": "Smart Phone", "price": 55, "image": "images/shiwa-id-Uae7ouMw91A-unsplash.jpg"},
-    {"name": "Pants", "price": 20, "image": "images/xavier-teo-SxAXphIPWeg-unsplash.jpg"},
+    {"name": "Shoes", "price": 20, "image": "images/xavier-teo-SxAXphIPWeg-unsplash.jpg"},
 ]
 
 app.config
