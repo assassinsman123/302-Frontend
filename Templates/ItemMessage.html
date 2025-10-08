@@ -3,40 +3,83 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Message Seller </title>
+  <title>Message Seller - {{ item.name }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 <body>
     <!--Navbar-->
     <nav class="navbar">
-        <a href ="{{ url_for('products')}}"class="nav-left">← Back to Products</a>
-        <h2>Marketplace</h2>
-        <div class="user-icon">👤</div>
+        <div class="nav-left">
+            <a href="{{ url_for('products') }}" class="btn back-btn" title="Back to Products">←</a>
+            <h2>{{ item.name }}</h2>
+        </div>
+        
+        <div class="nav-right">
+            <!-- User Icon - Logout -->
+            <div class="user-icon-container">
+                <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">👤</span>
+                <span class="logout-text" id="logoutText" onclick="logout()" style="display: none;">Logout</span>
+            </div>
+        </div>
     </nav>
 
     <!--Item Message Container-->
     <div class="item-message-container">
+        <!--Item Details-->
+        <div class="item-details">
+            <div class="item-image">
+                <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}">
+            </div>
+            <div class="item-info">
+                <h1>{{ item.name }}</h1>
+                <p class="item-price">${{ item.price }}</p>
+                {% if item.category %}
+                    <p class="item-category"><strong>Category:</strong> {{ item.category }}</p>
+                {% endif %}
+                {% if item.condition %}
+                    <p class="item-condition"><strong>Condition:</strong> {{ item.condition }}</p>
+                {% endif %}
+                {% if item.features %}
+                    <p class="item-description"><strong>Description:</strong> {{ item.features }}</p>
+                {% endif %}
+            </div>
+        </div>
 
-    <!--Item Image-->
-    <div class="item-image">
-    <img src="{{ url_for('static', filename='uploads/' + item['image']) }}" alt="{{ item['name'] }}">
-    </div>
+        <!--Message Box-->
+        <div class="message-box">
+            <h2>Send Message to Seller</h2>
+            <form action="{{ url_for('message_seller', item_id=item_id) }}" method="POST">
+                <textarea name="message" placeholder="Hi, is this item available?" rows="4" required></textarea>
+                <div class="message-actions">
+                    <button type="button" onclick="window.location.href='{{ url_for('products') }}'" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Send Message</button>
+                </div>
+            </form>
+        </div>
 
-    <!--Message Box-->
-    <div class="message-box">
-    <h2>send Message to Seller</h2>
-    <form action="#" method="POST">
-        <input type="text" name="message" placeholder="Hi, is this item available?" required>
-        <button type="submit">send</button>
-    </form>
-    </div>
-
-    <!--Icons-->
-
-    <div class="icons">
-        <span>🔔</span>
-        <span>💾</span>
+        <!--Action Icons-->
+        <div class="action-icons">
+            <span title="Notifications">🔔</span>
+            <span title="Save Item">💾</span>
         </div>
     </div>
+
+    <script>
+        function toggleLogout() {
+            const logoutText = document.getElementById('logoutText');
+            const isVisible = logoutText.style.display !== 'none';
+            
+            if (isVisible) {
+                logoutText.style.display = 'none';
+            } else {
+                logoutText.style.display = 'inline-block';
+            }
+        }
+        
+        function logout() {
+            window.location.href = "{{ url_for('logout') }}";
+        }
+    </script>
 </body>
 </html>
 

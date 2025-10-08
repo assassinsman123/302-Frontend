@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign up</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
   <div class="signup-container">
@@ -14,11 +13,15 @@
 
     <form method="POST">
       <div class="input-row">
-        <label for="first_name">First Name</label>
-        <input type="text" id="first_name" name="first_name" placeholder="First Name" required>
+        <div>
+          <label for="first_name">First Name</label>
+          <input type="text" id="first_name" name="first_name" placeholder="First Name" required>
+        </div>
 
-        <label for="last_name">Last Name</label>
-        <input type="text" id="last_name" name="last_name" placeholder="Last Name" required>
+        <div>
+          <label for="last_name">Last Name</label>
+          <input type="text" id="last_name" name="last_name" placeholder="Last Name" required>
+        </div>
       </div>
 
       <label for="email">Email</label>
@@ -27,18 +30,35 @@
       <div class="password-row">
         <label for="password">Password</label>
         <input type="password" id="password" name="password" placeholder="Password" required>
-        <span class="toggle" data-target="password">👁</span>
+        <span class="toggle" onclick="togglePassword('password')" title="Show/Hide Password">👁</span>
       </div>
 
       <div class="password-row">
         <label for="confirm_password">Confirm Password</label>
         <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
-        <span class="toggle" data-target="confirm_password">👁</span>
+        <span class="toggle" onclick="togglePassword('confirm_password')" title="Show/Hide Password">👁</span>
       </div>
 
       <button type="submit">Create an account</button>
       <p>Already have an account? <a href="{{ url_for('index') }}">Login</a></p>
     </form>
   </div>
+
+  <script>
+    function togglePassword(fieldId) {
+      const passwordField = document.getElementById(fieldId);
+      const toggleIcon = passwordField.nextElementSibling;
+      
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.textContent = '🙈'; // Hide password icon
+        toggleIcon.title = 'Hide Password';
+      } else {
+        passwordField.type = 'password';
+        toggleIcon.textContent = '👁'; // Show password icon
+        toggleIcon.title = 'Show Password';
+      }
+    }
+  </script>
 </body>
 </html>

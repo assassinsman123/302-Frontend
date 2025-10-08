@@ -4,6 +4,16 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Change this in production
 
+# Global list to store all products (default + uploaded)
+products_list = [
+    {"name": "Smart Watch", "price": 89, "image": "images/daniel-korpai-hbTKIbuMmBI-unsplash.jpg"},
+    {"name": "Shoes", "price": 59, "image": "images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg"},
+    {"name": "Laptop", "price": 120, "image": "images/matthew-moloney-YeGao3uk8kI-unsplash.jpg"},
+    {"name": "T-Shirts", "price": 15, "image": "images/ryan-hoffman-6Nub980bI3I-unsplash.jpg"},
+    {"name": "Smart Phone", "price": 55, "image": "images/shiwa-id-Uae7ouMw91A-unsplash.jpg"},
+    {"name": "Pants", "price": 20, "image": "images/xavier-teo-SxAXphIPWeg-unsplash.jpg"},
+]
+
 app.config
 @app.route('/')
 def home():  # Renamed this function to avoid conflict
@@ -57,15 +67,7 @@ def forgot_password():
 # Products Page
 @app.route('/products')
 def products():
-    products = [
-        {"name": "Smart Watch", "price": 89, "image": "uploads/smartwatch.jpg"},
-        {"name": "Shoes", "price": 59, "image": "uploads/shoes.jpg"},
-        {"name": "Laptop", "price": 120, "image": "uploads/laptop.jpg"},
-        {"name": "T-Shirts", "price": 15, "image": "uploads/tshirt.jpg"},
-        {"name": "Smart Phone", "price": 55, "image": "uploads/smartphone.jpg"},
-        {"name": "Pants", "price": 20, "image": "uploads/pants.jpg"},
-    ]
-    return render_template('Products.html', products=products)
+    return render_template('Products.html', products=products_list)
 
 # Upload Route
 @app.route('/upload', methods=['GET', 'POST'])
@@ -83,9 +85,27 @@ def upload():
         image = request.files.get('image')
         
         if image and image.filename != "":
+            # Create uploads directory if it doesn't exist
+            upload_dir = os.path.join('static', 'uploads')
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
+            
             # Save the uploaded image to the static/uploads folder
-            image_path = f'static/uploads/{image.filename}'
+            image_filename = image.filename
+            image_path = os.path.join(upload_dir, image_filename)
             image.save(image_path)
+            
+            # Add the new product to the global products list
+            new_product = {
+                "name": title,
+                "price": float(price),
+                "image": f"uploads/{image_filename}",
+                "category": category,
+                "condition": condition,
+                "features": features
+            }
+            products_list.append(new_product)
+            
             flash(f"Product '{title}' uploaded successfully!", "success")
             return redirect(url_for('products'))
         else:
@@ -114,8 +134,20 @@ def message_seller(item_id):
     if "user" not in session:
         flash("Please log in to send a message.", "warning")
         return redirect(url_for("index"))
-
-       
+    
+    # Find the product by index (item_id)
+    if 0 <= item_id < len(products_list):
+        item = products_list[item_id]
+        
+        if request.method == "POST":
+            message = request.form.get('message')
+            flash(f"Message sent to seller of '{item['name']}'!", "success")
+            return redirect(url_for('products'))
+        
+        return render_template('ItemMessage.html', item=item, item_id=item_id)
+    else:
+        flash("Product not found.", "danger")
+        return redirect(url_for('products'))
 
 # Dashboard Route (Protected Page)
 @app.route('/dashboard')
