@@ -214,14 +214,80 @@ body {
     border-radius: 20px;
     font-size: 14px;
 }
-
-.nav-buttons {
+/* Navbar Styles */
+.navbar {
+    background-color: #333; /* Dark background for the navbar */
+    color: white;
+    padding: 15px 20px;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
 }
 
-.nav-buttons .btn {
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Space between title and buttons */
+}
+
+.nav-left h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+    color: white;
+}
+
+.search-bar {
+    flex: 1; /* Take up available space */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.search-bar input {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.search-bar input:focus {
+    border-color: #007BFF; /* Highlight border on focus */
+    outline: none;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between user icon and logout */
+}
+
+.user-icon {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between icon and text */
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.user-icon:hover {
+    color: #007BFF; /* Highlight on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+/* Buttons */
+.nav-left .btn,
+.nav-right .btn {
     padding: 8px 15px;
     background: #555;
     color: white;
@@ -229,16 +295,19 @@ body {
     border-radius: 5px;
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, transform 0.2s ease;
 }
 
-.nav-buttons .btn.active {
+.nav-left .btn.active {
     background: #007BFF;
 }
 
-.nav-buttons .btn:hover {
+.nav-left .btn:hover,
+.nav-right .btn:hover {
     background: #444;
+    transform: translateY(-2px); /* Slight lift effect on hover */
 }
+
 
 /* Products Grid */
 .products {
