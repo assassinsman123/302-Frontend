@@ -321,8 +321,14 @@ body {
     background: #555 !important;
     color: white !important;
     text-decoration: none !important;
-    font-size: 14px !important;
+    font-size: 18px !important;
     font-weight: bold !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
 }
 
 .back-btn:hover {
