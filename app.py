@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Change this in production
@@ -13,6 +13,9 @@ products_list = [
     {"name": "Smart Phone", "price": 55, "image": "images/shiwa-id-Uae7ouMw91A-unsplash.jpg"},
     {"name": "Shoes", "price": 20, "image": "images/xavier-teo-SxAXphIPWeg-unsplash.jpg"},
 ]
+
+# Global dictionary to store user wishlists (session-based)
+user_wishlists = {}
 
 app.config
 @app.route('/')
@@ -139,12 +142,18 @@ def message_seller(item_id):
     if 0 <= item_id < len(products_list):
         item = products_list[item_id]
         
+        # Check if item is in user's wishlist
+        user = session['user']
+        is_in_wishlist = False
+        if user in user_wishlists and item_id in user_wishlists[user]:
+            is_in_wishlist = True
+        
         if request.method == "POST":
             message = request.form.get('message')
             flash(f"Message sent to seller of '{item['name']}'!", "success")
             return redirect(url_for('products'))
         
-        return render_template('ItemMessage.html', item=item, item_id=item_id)
+        return render_template('ItemMessage.html', item=item, item_id=item_id, is_in_wishlist=is_in_wishlist)
     else:
         flash("Product not found.", "danger")
         return redirect(url_for('products'))
@@ -156,6 +165,129 @@ def dashboard():
         flash("Please log in first.", "warning")
         return redirect(url_for("index"))
     return f"Welcome, {session['user']}! <br><a href='/logout'>Logout</a>"
+
+# Wishlist Routes
+@app.route('/wishlist')
+def wishlist():
+    if "user" not in session:
+        flash("Please log in to view your wishlist.", "warning")
+        return redirect(url_for("index"))
+    
+    user = session['user']
+    user_wishlist_items = user_wishlists.get(user, [])
+    
+    # Get full product details for wishlist items
+    wishlist_products = []
+    for item_id in user_wishlist_items:
+        if 0 <= item_id < len(products_list):
+            product = products_list[item_id].copy()
+            product['item_id'] = item_id
+            wishlist_products.append(product)
+    
+    return render_template('Wishlist.html', products=wishlist_products)
+
+@app.route('/add_to_wishlist/<int:item_id>')
+def add_to_wishlist(item_id):
+    if "user" not in session:
+        if request.headers.get('Content-Type') == 'application/json' or request.args.get('ajax'):
+            return jsonify({"success": False, "message": "Please log in to add items to wishlist."}), 401
+        flash("Please log in to add items to wishlist.", "warning")
+        return redirect(url_for("index"))
+    
+    user = session['user']
+    if user not in user_wishlists:
+        user_wishlists[user] = []
+    
+    if 0 <= item_id < len(products_list):
+        if item_id not in user_wishlists[user]:
+            user_wishlists[user].append(item_id)
+            message = f"Added {products_list[item_id]['name']} to your wishlist!"
+            
+            # Check if it's an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
+                return jsonify({"success": True, "message": message})
+            
+            flash(message, "success")
+        else:
+            message = "Item is already in your wishlist!"
+            
+            # Check if it's an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
+                return jsonify({"success": False, "message": message})
+                
+            flash(message, "info")
+    else:
+        message = "Product not found."
+        
+        # Check if it's an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
+            return jsonify({"success": False, "message": message})
+            
+        flash(message, "danger")
+    
+    return redirect(request.referrer or url_for('products'))
+
+@app.route('/remove_from_wishlist/<int:item_id>')
+def remove_from_wishlist(item_id):
+    if "user" not in session:
+        flash("Please log in to manage your wishlist.", "warning")
+        return redirect(url_for("index"))
+    
+    user = session['user']
+    if user in user_wishlists and item_id in user_wishlists[user]:
+        user_wishlists[user].remove(item_id)
+        flash(f"Removed {products_list[item_id]['name']} from your wishlist!", "success")
+    else:
+        flash("Item not found in your wishlist.", "info")
+    
+    return redirect(request.referrer or url_for('wishlist'))
+
+@app.route('/toggle_wishlist/<int:item_id>')
+def toggle_wishlist(item_id):
+    if "user" not in session:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
+            return jsonify({"success": False, "message": "Please log in to manage your wishlist."}), 401
+        flash("Please log in to manage your wishlist.", "warning")
+        return redirect(url_for("index"))
+    
+    user = session['user']
+    if user not in user_wishlists:
+        user_wishlists[user] = []
+    
+    if 0 <= item_id < len(products_list):
+        is_in_wishlist = item_id in user_wishlists[user]
+        
+        if is_in_wishlist:
+            # Remove from wishlist
+            user_wishlists[user].remove(item_id)
+            message = f"Removed {products_list[item_id]['name']} from your wishlist!"
+            action = "removed"
+        else:
+            # Add to wishlist
+            user_wishlists[user].append(item_id)
+            message = f"Added {products_list[item_id]['name']} to your wishlist!"
+            action = "added"
+        
+        # Check if it's an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
+            return jsonify({
+                "success": True, 
+                "message": message, 
+                "action": action,
+                "is_in_wishlist": not is_in_wishlist
+            })
+        
+        flash(message, "success")
+    else:
+        message = "Product not found."
+        
+        # Check if it's an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
+            return jsonify({"success": False, "message": message})
+            
+        flash(message, "danger")
+    
+    return redirect(request.referrer or url_for('products'))
 
 
 # Logout Route
