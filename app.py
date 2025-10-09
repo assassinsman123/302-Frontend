@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Change this in production
@@ -16,6 +17,10 @@ products_list = [
 
 # Global dictionary to store user wishlists (session-based)
 user_wishlists = {}
+
+# Global dictionary to store chat messages
+# Format: {item_id: [{"sender": "user_id", "content": "message", "timestamp": "time"}]}
+chat_messages = {}
 
 app.config
 @app.route('/')
@@ -150,8 +155,29 @@ def message_seller(item_id):
         
         if request.method == "POST":
             message = request.form.get('message')
-            flash(f"Message sent to seller of '{item['name']}'!", "success")
-            return redirect(url_for('products'))
+            
+            # Initialize message list for this item if it doesn't exist
+            if item_id not in chat_messages:
+                chat_messages[item_id] = []
+                # Add welcome message if this is the first interaction
+                welcome_message = {
+                    "sender": "seller",
+                    "content": f"Hi! Thanks for your interest in {item['name']}. How can I help you?",
+                    "timestamp": datetime.now().strftime("%H:%M")
+                }
+                chat_messages[item_id].append(welcome_message)
+            
+            # Add user's message to the chat
+            if message and message.strip():
+                user_message = {
+                    "sender": session['user'],
+                    "content": message.strip(),
+                    "timestamp": datetime.now().strftime("%H:%M")
+                }
+                chat_messages[item_id].append(user_message)
+            
+            flash(f"Message sent! Redirecting to chat with seller.", "success")
+            return redirect(url_for('chat_with_seller', item_id=item_id))
         
         return render_template('ItemMessage.html', item=item, item_id=item_id, is_in_wishlist=is_in_wishlist)
     else:
@@ -288,6 +314,68 @@ def toggle_wishlist(item_id):
         flash(message, "danger")
     
     return redirect(request.referrer or url_for('products'))
+
+# Chat with Seller Route
+@app.route('/chat/<int:item_id>')
+def chat_with_seller(item_id):
+    if "user" not in session:
+        flash("Please log in to chat with seller.", "warning")
+        return redirect(url_for("index"))
+    
+    # Find the product by index (item_id)
+    if 0 <= item_id < len(products_list):
+        item = products_list[item_id]
+        
+        # Get existing messages for this item
+        messages = chat_messages.get(item_id, [])
+        
+        # Add welcome message if no messages exist
+        if not messages:
+            welcome_message = {
+                "sender": "seller",
+                "content": f"Hi! Thanks for your interest in {item['name']}. How can I help you?",
+                "timestamp": datetime.now().strftime("%H:%M")
+            }
+            chat_messages[item_id] = [welcome_message]
+            messages = chat_messages[item_id]
+        
+        return render_template('SellerMessage.html', item=item, item_id=item_id, messages=messages)
+    else:
+        flash("Product not found.", "danger")
+        return redirect(url_for('products'))
+
+# API endpoint for sending messages (for future AJAX implementation)
+@app.route('/api/send_message/<int:item_id>', methods=['POST'])
+def send_message_api(item_id):
+    if "user" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    data = request.get_json()
+    message_content = data.get('message', '').strip()
+    
+    if not message_content:
+        return jsonify({"success": False, "message": "Message cannot be empty"}), 400
+    
+    if not (0 <= item_id < len(products_list)):
+        return jsonify({"success": False, "message": "Product not found"}), 404
+    
+    # Initialize message list for this item if it doesn't exist
+    if item_id not in chat_messages:
+        chat_messages[item_id] = []
+    
+    # Add user message to the chat
+    user_message = {
+        "sender": session['user'],
+        "content": message_content,
+        "timestamp": datetime.now().strftime("%H:%M")
+    }
+    chat_messages[item_id].append(user_message)
+    
+    return jsonify({
+        "success": True, 
+        "message": "Message sent successfully",
+        "timestamp": user_message["timestamp"]
+    })
 
 
 # Logout Route

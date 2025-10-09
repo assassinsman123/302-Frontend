@@ -47,9 +47,13 @@
         <!--Message Box-->
         <div class="message-box">
             <h2>Send Message to Seller</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                💬 Sending a message will start a chat conversation with the seller
+            </p>
             <form action="{{ url_for('message_seller', item_id=item_id) }}" method="POST">
                 <textarea name="message" placeholder="Hi, is this item available?" rows="4" required></textarea>
                 <div class="message-actions">
+                    <div class="spacer"></div>
                     <!--Action Icons-->
                     <div class="action-icons">
                         <span title="Enable Notifications" onclick="toggleNotifications()" id="notificationIcon">🔔</span>
@@ -59,7 +63,8 @@
                     </div>
                     <div class="button-group">
                         <button type="button" onclick="window.location.href='{{ url_for('products') }}'" class="btn-secondary">Cancel</button>
-                        <button type="submit" class="btn-primary">Send Message</button>
+                        <button type="button" onclick="window.location.href='{{ url_for('chat_with_seller', item_id=item_id) }}'" class="btn-chat">💬 Start Chat</button>
+                        <button type="submit" class="btn-primary">📤 Send & Chat</button>
                     </div>
                 </div>
             </form>
@@ -173,6 +178,49 @@
             const popup = document.getElementById('notification-popup');
             popup.style.display = 'none';
         }
+
+        // Add form submission feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageForm = document.querySelector('form[action*="message"]');
+            const submitButton = document.querySelector('.btn-primary');
+            
+            if (messageForm && submitButton) {
+                messageForm.addEventListener('submit', function(e) {
+                    // Change button text to show loading state
+                    submitButton.innerHTML = '📤 Sending...';
+                    submitButton.disabled = true;
+                    
+                    // Show user feedback
+                    const textarea = document.querySelector('textarea[name="message"]');
+                    if (textarea && textarea.value.trim()) {
+                        // Create a temporary notification
+                        const tempNotification = document.createElement('div');
+                        tempNotification.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: #007BFF;
+                            color: white;
+                            padding: 15px 20px;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                            z-index: 1000;
+                            font-size: 14px;
+                            animation: slideIn 0.3s ease-out;
+                        `;
+                        tempNotification.innerHTML = '💬 Starting chat conversation...';
+                        document.body.appendChild(tempNotification);
+                        
+                        // Remove notification after form submits
+                        setTimeout(() => {
+                            if (tempNotification.parentNode) {
+                                tempNotification.remove();
+                            }
+                        }, 2000);
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

@@ -3,33 +3,108 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Review Page</title>
+    <title>Product Reviews - {{product[1]}}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
     
     <body>
-       <div class="container">
-        <h1>{{product[1]}}</h1>
-        <p>Price: {{product[2]}}</p>
-        <p>Description: {{product[3]}}</p>
+       <!--Navbar-->
+       <nav class="navbar">
+           <div class="nav-left">
+               <button onclick="history.back()" class="back-btn" title="Go Back">←</button>
+               <h2>Product Reviews</h2>
+           </div>
+           
+           <div class="nav-right">
+               <!-- User Icon - Logout -->
+               <div class="user-icon-container">
+                   <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">👤</span>
+                   <span class="logout-text" id="logoutText" onclick="logout()" style="display: none;">Logout</span>
+               </div>
+           </div>
+       </nav>
 
-    <h2>Submit a Review</h2>
-    <form method="POST">
-     <label for="rating">Rating (1-5):</label>
-     <input type="number" id="rating" name="rating" min="1" max="5" required>
-     <label for= "comment">Comment:</label>
-     <textarea id="comment" name="comment" required></textarea>
-     <button type="submit">Submit Review</button>
-    </form>
+       <div class="review-container">
+           <!-- Product Information -->
+           <div class="product-header">
+               <h1 class="product-title">{{product[1]}}</h1>
+               <div class="product-details">
+                   <p class="product-price">${{product[2]}}</p>
+                   <p class="product-description">{{product[3]}}</p>
+               </div>
+           </div>
 
-    <h2>Reviews</h2>
-    {%for review in reviews%}
-    <div class="review">
-    <p><strong>{{review[0]}} </strong> (Rating: {{review[1]}})
-    <p>{{review[2]}}</p>
-    </div>
-    {%endfor%}
-    </div>
+           <!-- Review Form -->
+           <div class="review-form-section">
+               <h2>Submit a Review</h2>
+               <form method="POST" class="review-form">
+                   <div class="form-group">
+                       <label for="rating">Rating:</label>
+                       <div class="rating-input">
+                           <input type="number" id="rating" name="rating" min="1" max="5" required>
+                           <span class="rating-text">out of 5 stars</span>
+                       </div>
+                   </div>
+                   
+                   <div class="form-group">
+                       <label for="comment">Your Review:</label>
+                       <textarea id="comment" name="comment" placeholder="Share your experience with this product..." required></textarea>
+                   </div>
+                   
+                   <div class="form-actions">
+                       <button type="button" onclick="history.back()" class="btn-secondary">Cancel</button>
+                       <button type="submit" class="btn-primary">Submit Review</button>
+                   </div>
+               </form>
+           </div>
+
+           <!-- Reviews Display -->
+           <div class="reviews-section">
+               <h2>Customer Reviews</h2>
+               {% if reviews %}
+                   <div class="reviews-list">
+                       {% for review in reviews %}
+                       <div class="review-item">
+                           <div class="review-header">
+                               <span class="reviewer-name">{{review[0]}}</span>
+                               <div class="rating-display">
+                                   {% for i in range(review[1]) %}
+                                       <span class="star">★</span>
+                                   {% endfor %}
+                                   {% for i in range(5 - review[1]) %}
+                                       <span class="star empty">☆</span>
+                                   {% endfor %}
+                                   <span class="rating-number">({{review[1]}}/5)</span>
+                               </div>
+                           </div>
+                           <p class="review-comment">{{review[2]}}</p>
+                       </div>
+                       {% endfor %}
+                   </div>
+               {% else %}
+                   <div class="no-reviews">
+                       <p>No reviews yet. Be the first to review this product!</p>
+                   </div>
+               {% endif %}
+           </div>
+       </div>
+
+       <script>
+           function toggleLogout() {
+               const logoutText = document.getElementById('logoutText');
+               const isVisible = logoutText.style.display !== 'none';
+               
+               if (isVisible) {
+                   logoutText.style.display = 'none';
+               } else {
+                   logoutText.style.display = 'inline-block';
+               }
+           }
+           
+           function logout() {
+               window.location.href = "{{ url_for('logout') }}";
+           }
+       </script>
     </body>
 </html>
 
