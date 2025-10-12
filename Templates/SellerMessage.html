@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seller Message</title>
+  <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <!--Navbar-->
+    <nav class="navbar">
+        <div class="nav-left">
+            <button onclick="history.back()" class="back-btn" title="Go Back">←</button>
+            <h2>Chat with Seller</h2>
+        </div>
+        
+        <div class="nav-right">
+            <!-- User Icon - Logout -->
+            <div class="user-icon-container">
+                <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">👤</span>
+                <span class="logout-text" id="logoutText" onclick="logout()" style="display: none;">Logout</span>
+            </div>
+        </div>
+    </nav>
+
+    <!--Chat Container-->
+    <div class="chat-container">
+        <!--Product Info Header-->
+        <div class="chat-product-header">
+            <div class="product-info">
+                <img id="productImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23007BFF'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='24'%3E�%3C/text%3E%3C/svg%3E" alt="Product Image" class="product-thumbnail">
+                <div class="product-details">
+                    <h3 id="productName">Loading Product...</h3>
+                    <p class="price" id="productPrice">$0</p>
+                    <p class="category" id="productCategory">Category</p>
+                </div>
+            </div>
+            <div class="seller-info">
+                <div class="seller-avatar">👤</div>
+                <div class="seller-details">
+                    <h4>Product Owner</h4>
+                    <span class="online-status">● Online</span>
+                </div>
+            </div>
+        </div>
+
+        <!--Chat Messages Area-->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be loaded dynamically -->
+        </div>
+
+        <!--Chat Input Area-->
+        <div class="chat-input-container">
+            <form id="chatForm" class="chat-form">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off" required>
+                    <button type="submit" class="send-btn" title="Send Message">
+                        <span class="send-icon">➤</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Sample product data (in a real app, this would come from your backend/API)
+        const sampleProducts = [
+            {
+                id: 0,
+                name: "Smart Watch",
+                price: 89,
+                image: "/static/images/daniel-korpai-hbTKIbuMmBI-unsplash.jpg",
+                category: "Electronics"
+            },
+            {
+                id: 1,
+                name: "Laptop",
+                price: 59,
+                image: "/static/images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg",
+                category: "Electronics"
+            },
+            {
+                id: 2,
+                name: "Pants",
+                price: 120,
+                image: "/static/images/matthew-moloney-YeGao3uk8kI-unsplash.jpg",
+                category: "Clothing"
+            },
+            {
+                id: 3,
+                name: "T-Shirts",
+                price: 15,
+                image: "/static/images/ryan-hoffman-6Nub980bI3I-unsplash.jpg",
+                category: "Clothing"
+            },
+            {
+                id: 4,
+                name: "Smart Phone",
+                price: 55,
+                image: "/static/images/shiwa-id-Uae7ouMw91A-unsplash.jpg",
+                category: "Electronics"
+            },
+            {
+                id: 5,
+                name: "Shoes",
+                price: 20,
+                image: "/static/images/xavier-teo-SxAXphIPWeg-unsplash.jpg",
+                category: "Fashion"
+            }
+        ];
+
+        // Get product information from URL parameters or default to first product
+        function getCurrentProduct() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('product') || urlParams.get('item') || '0';
+            const productIndex = parseInt(productId);
+            
+            // Return the product if it exists, otherwise return the first product as default
+            return sampleProducts[productIndex] || sampleProducts[0];
+        }
+
+        // Load and display product information
+        function loadProductInfo() {
+            const product = getCurrentProduct();
+            
+            // Update product display
+            document.getElementById('productName').textContent = product.name;
+            document.getElementById('productPrice').textContent = `$${product.price}`;
+            document.getElementById('productCategory').textContent = product.category;
+            
+            // Update product image with fallback
+            const productImage = document.getElementById('productImage');
+            productImage.src = product.image;
+            productImage.alt = product.name;
+            
+            // Handle image load error with fallback
+            productImage.onerror = function() {
+                this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23007BFF'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='24'%3E📦%3C/text%3E%3C/svg%3E";
+            };
+            
+            // Update page title
+            document.title = `Chat with Seller - ${product.name}`;
+            
+            return product;
+        }
+
+        // Frontend user management
+        function getCurrentUser() {
+            let user = localStorage.getItem('demo_user');
+            if (!user) {
+                user = 'user_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('demo_user', user);
+            }
+            return user;
+        }
+
+        // Initialize user and product
+        const currentUser = getCurrentUser();
+        let currentProduct = null;
+
+        function toggleLogout() {
+            const logoutText = document.getElementById('logoutText');
+            const isVisible = logoutText.style.display !== 'none';
+            
+            if (isVisible) {
+                logoutText.style.display = 'none';
+            } else {
+                logoutText.style.display = 'inline-block';
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('demo_user');
+            // Clear all chat data
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('chat_messages_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            alert('Logged out! Chat data cleared.');
+            location.reload();
+        }
+
+        // Chat functionality
+        const chatMessages = document.getElementById('chatMessages');
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+
+        // Auto-scroll to bottom
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Add message to chat
+        function addMessage(content, isUser = true, timestamp = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'seller-message'}`;
+            
+            const currentTime = timestamp || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? '👤' : '👤'}</div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        <p>${content}</p>
+                        <span class="message-time">${currentTime}</span>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Handle form submission
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const message = messageInput.value.trim();
+            if (message) {
+                // Add user message immediately
+                addMessage(message, true);
+                const userMessage = message;
+                messageInput.value = '';
+                
+                // Save message to localStorage
+                saveMessageToStorage(userMessage, true);
+                
+                // Show sending indicator briefly
+                const sendingIndicator = addTypingIndicator('Sending...');
+                
+                // Simulate network delay and remove sending indicator
+                setTimeout(() => {
+                    if (sendingIndicator) sendingIndicator.remove();
+                }, 500);
+                
+                // Simulate seller response with varied timing
+                setTimeout(() => {
+                    const responses = [
+                        "Thanks for your interest! This item is in great condition.",
+                        "Yes, it's still available. Would you like more details?",
+                        "I can provide more photos if you'd like to see them.",
+                        "The price is negotiable. What's your offer?",
+                        "Feel free to ask any questions about the item!",
+                        "I can arrange a meeting for you to see it in person.",
+                        "This is one of my best items. Very well maintained!",
+                        "Let me know if you need any additional information.",
+                        "I'm available to meet this week if you're interested.",
+                        "This is one of my most popular items. Several people have shown interest.",
+                        "I have the original receipt and box for this item.",
+                        "Would you like to know more about its features?",
+                        "I can offer a small discount if you're buying today.",
+                        "The item is exactly as shown in the photos."
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage(randomResponse, false);
+                    
+                    // Save seller response to localStorage
+                    saveMessageToStorage(randomResponse, false);
+                }, 1500 + Math.random() * 2500);
+            }
+        });
+
+        // Save message to localStorage
+        function getChatKey() {
+            return `chat_messages_user_${currentUser}_item_${currentProduct.id}`;
+        }
+
+        function saveMessageToStorage(message, isUser) {
+            const chatKey = getChatKey();
+            let messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            
+            const messageObj = {
+                content: message,
+                isUser: isUser,
+                timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                id: Date.now() + Math.random()
+            };
+            
+            messages.push(messageObj);
+            localStorage.setItem(chatKey, JSON.stringify(messages));
+        }
+
+        // Load messages from localStorage
+        function loadMessagesFromStorage() {
+            const chatKey = getChatKey();
+            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            
+            // If no messages exist, add welcome message
+            if (messages.length === 0) {
+                const welcomeMessage = {
+                    content: `Hi! Thanks for your interest in ${currentProduct.name}. How can I help you?`,
+                    isUser: false,
+                    timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    id: Date.now()
+                };
+                messages.push(welcomeMessage);
+                localStorage.setItem(chatKey, JSON.stringify(messages));
+            }
+            
+            // Load messages into chat
+            messages.forEach(msg => {
+                addMessage(msg.content, msg.isUser, msg.timestamp);
+            });
+        }
+
+        // Add typing indicator function
+        function addTypingIndicator(text) {
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'message seller-message typing-indicator';
+            indicatorDiv.innerHTML = `
+                <div class="message-avatar">⏳</div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        <p>${text}</p>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(indicatorDiv);
+            scrollToBottom();
+            return indicatorDiv;
+        }
+
+        // Clear chat function (for demo purposes)
+        function clearChat() {
+            const chatKey = getChatKey();
+            localStorage.removeItem(chatKey);
+            chatMessages.innerHTML = '';
+            loadMessagesFromStorage();
+        }
+
+        // Add keyboard shortcut for clearing chat (Ctrl + K)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                if (confirm('Clear all messages?')) {
+                    clearChat();
+                }
+            }
+        });
+
+        // Typing indicator functionality
+        let typingTimeout;
+        let isTyping = false;
+        let typingIndicator = null;
+
+        messageInput.addEventListener('input', function() {
+            if (!isTyping) {
+                isTyping = true;
+                typingIndicator = addTypingIndicator('You are typing...');
+            }
+            
+            clearTimeout(typingTimeout);
+            
+            typingTimeout = setTimeout(() => {
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                    typingIndicator = null;
+                }
+                isTyping = false;
+            }, 1000);
+        });
+
+        // Enter key support for sending messages
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Initialize the chat
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load product information first
+            currentProduct = loadProductInfo();
+            
+            // Auto-focus input
+            messageInput.focus();
+            
+            // Load existing messages from localStorage
+            loadMessagesFromStorage();
+            
+            // Initial scroll to bottom
+            scrollToBottom();
+        });
+    </script>
+</body>
+</html>
