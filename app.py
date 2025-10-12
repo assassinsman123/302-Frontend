@@ -5,14 +5,59 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Change this in production
 
+# Configure Flask for UTF-8 encoding
+app.config['JSON_AS_ASCII'] = False
+
 # Global list to store all products (default + uploaded)
 products_list = [
-    {"name": "Smart Watch", "price": 89, "image": "images/daniel-korpai-hbTKIbuMmBI-unsplash.jpg"},
-    {"name": "Laptop", "price": 59, "image": "images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg"},
-    {"name": "Pants", "price": 120, "image": "images/matthew-moloney-YeGao3uk8kI-unsplash.jpg"},
-    {"name": "T-Shirts", "price": 15, "image": "images/ryan-hoffman-6Nub980bI3I-unsplash.jpg"},
-    {"name": "Smart Phone", "price": 55, "image": "images/shiwa-id-Uae7ouMw91A-unsplash.jpg"},
-    {"name": "Shoes", "price": 20, "image": "images/xavier-teo-SxAXphIPWeg-unsplash.jpg"},
+    {
+        "name": "Smart Watch", 
+        "price": 89, 
+        "image": "images/daniel-korpai-hbTKIbuMmBI-unsplash.jpg",
+        "category": "Electronics",
+        "condition": "Excellent",
+        "features": "Heart rate monitor, GPS tracking, Waterproof design, 7-day battery life"
+    },
+    {
+        "name": "Laptop", 
+        "price": 59, 
+        "image": "images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg",
+        "category": "Electronics",
+        "condition": "Good",
+        "features": "Intel Core i5, 8GB RAM, 256GB SSD, Full HD display, Lightweight design"
+    },
+    {
+        "name": "Pants", 
+        "price": 120, 
+        "image": "images/matthew-moloney-YeGao3uk8kI-unsplash.jpg",
+        "category": "Clothing",
+        "condition": "New",
+        "features": "Premium cotton blend, Tailored fit, Multiple color options, Machine washable"
+    },
+    {
+        "name": "T-Shirts", 
+        "price": 15, 
+        "image": "images/ryan-hoffman-6Nub980bI3I-unsplash.jpg",
+        "category": "Clothing",
+        "condition": "Excellent",
+        "features": "100% organic cotton, Comfortable fit, Pre-shrunk, Various sizes available"
+    },
+    {
+        "name": "Smart Phone", 
+        "price": 55, 
+        "image": "images/shiwa-id-Uae7ouMw91A-unsplash.jpg",
+        "category": "Electronics",
+        "condition": "Good",
+        "features": "Latest Android OS, Dual camera, 128GB storage, Fast charging, Unlocked"
+    },
+    {
+        "name": "Shoes", 
+        "price": 20, 
+        "image": "images/xavier-teo-SxAXphIPWeg-unsplash.jpg",
+        "category": "Fashion",
+        "condition": "Used",
+        "features": "Comfortable sole, Durable materials, Classic design, Multiple sizes"
+    },
 ]
 
 # Global dictionary to store user wishlists (session-based)
@@ -377,6 +422,266 @@ def send_message_api(item_id):
         "timestamp": user_message["timestamp"]
     })
 
+# Global dictionary to store booking alerts
+# Format: {user_id: {item_id: {"item_name": "name", "email": "email", "enabled": True, "date_created": "timestamp"}}}
+booking_alerts = {}
+
+# Global dictionary to store reservations/cart items
+# Format: {item_id: [{"user": "user_id", "pickup_date": "date", "pickup_time": "time", "status": "pending/confirmed"}]}
+reservations = {}
+
+# API endpoint to enable booking alerts
+@app.route('/api/enable_booking_alert', methods=['POST'])
+def enable_booking_alert():
+    if "user" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    data = request.get_json()
+    item_id = data.get('item_id')
+    item_name = data.get('item_name')
+    user_email = data.get('user_email')
+    
+    if not all([item_id, item_name]):
+        return jsonify({"success": False, "message": "Missing required data"}), 400
+    
+    user = session['user']
+    
+    # Initialize user's booking alerts if not exists
+    if user not in booking_alerts:
+        booking_alerts[user] = {}
+    
+    # Save the booking alert
+    booking_alerts[user][str(item_id)] = {
+        "item_name": item_name,
+        "email": user_email,
+        "enabled": True,
+        "date_created": datetime.now().isoformat()
+    }
+    
+    # Simulate sending email confirmation (in real app, you'd use an email service)
+    print(f"📧 Booking alert enabled for {user} - Item: {item_name}, Email: {user_email}")
+    
+    return jsonify({
+        "success": True, 
+        "message": f"Booking alerts enabled for {item_name}",
+        "email_sent": bool(user_email)
+    })
+
+# API endpoint to create a reservation/booking
+@app.route('/api/create_reservation', methods=['POST'])
+def create_reservation():
+    if "user" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    data = request.get_json()
+    item_id = data.get('item_id')
+    pickup_date = data.get('pickup_date')
+    pickup_time = data.get('pickup_time')
+    pickup_location = data.get('pickup_location')
+    email = data.get('email')
+    notes = data.get('notes', '')
+    
+    if not all([item_id, pickup_date, pickup_time, pickup_location, email]):
+        return jsonify({"success": False, "message": "Missing required booking information"}), 400
+    
+    user = session['user']
+    
+    # Initialize reservations for this item if not exists
+    if item_id not in reservations:
+        reservations[item_id] = []
+    
+    # Create new reservation
+    reservation = {
+        "user": user,
+        "email": email,
+        "pickup_date": pickup_date,
+        "pickup_time": pickup_time,
+        "pickup_location": pickup_location,
+        "notes": notes,
+        "status": "pending",
+        "created_at": datetime.now().isoformat(),
+        "reservation_id": f"RES{len(reservations[item_id]) + 1:03d}"
+    }
+    
+    reservations[item_id].append(reservation)
+    
+    # Send email alerts to users who have enabled booking alerts for this item
+    item_name = "Unknown Item"
+    if 0 <= int(item_id) < len(products_list):
+        item_name = products_list[int(item_id)]['name']
+    
+    # Get location name for email
+    location_map = {
+        'campus-main': 'Main Campus - Student Center',
+        'campus-library': 'Campus Library - Front Entrance', 
+        'campus-parking': 'Main Parking Lot - Near Entrance',
+        'downtown-cafe': 'Downtown Cafe - Central Square',
+        'mall-entrance': 'Shopping Mall - Main Entrance',
+        'park-meetup': 'City Park - Main Pavilion',
+        'other': 'Other Location (see notes)'
+    }
+    location_name = location_map.get(pickup_location, pickup_location)
+    
+    # Check all users who have booking alerts for this item
+    alerts_sent = 0
+    for alert_user, user_alerts in booking_alerts.items():
+        if str(item_id) in user_alerts and user_alerts[str(item_id)]['enabled']:
+            alert_email = user_alerts[str(item_id)]['email']
+            
+            # Don't send alert to the person who made the booking
+            if alert_email != email:
+                # Send detailed booking alert email
+                print(f"📧 BOOKING ALERT EMAIL:")
+                print(f"   To: {alert_email}")
+                print(f"   Subject: 🔔 BOOKING ALERT: '{item_name}' has been reserved!")
+                print(f"   Body:")
+                print(f"   Hello!")
+                print(f"   ")
+                print(f"   🔔 The item you're watching has been booked by someone else:")
+                print(f"   ")
+                print(f"   📦 Item: {item_name}")
+                print(f"   📅 Pickup Date: {pickup_date}")
+                print(f"   ⏰ Pickup Time: {pickup_time}")
+                print(f"   📍 Pickup Location: {location_name}")
+                print(f"   🆔 Reservation ID: {reservation['reservation_id']}")
+                print(f"   ")
+                print(f"   ⚠️ This item is no longer available for the specified pickup time.")
+                print(f"   ")
+                print(f"   If you're still interested in this item, you may want to:")
+                print(f"   • Contact the seller for alternative pickup times")
+                print(f"   • Check if similar items are available")
+                print(f"   • Set up alerts for other items you're interested in")
+                print(f"   ")
+                print(f"   You received this alert because you enabled booking notifications")
+                print(f"   for this item. To manage your alerts, visit the notification center.")
+                print(f"   ")
+                print(f"   ---")
+                print(f"   This is an automated notification from your booking alert system.")
+                print("   " + "="*60)
+                alerts_sent += 1
+                
+                # Mark alert as sent (optional tracking)
+                user_alerts[str(item_id)]['last_alert_sent'] = datetime.now().isoformat()
+    
+    # Also send confirmation email to the person who made the booking
+    print(f"📧 BOOKING CONFIRMATION EMAIL:")
+    print(f"   To: {email}")
+    print(f"   Subject: ✅ Booking Confirmed: {item_name}")
+    print(f"   Body:")
+    print(f"   Thank you for your reservation!")
+    print(f"   ")
+    print(f"   ✅ Your pickup has been successfully scheduled:")
+    print(f"   ")
+    print(f"   📦 Item: {item_name}")
+    print(f"   📅 Pickup Date: {pickup_date}")
+    print(f"   ⏰ Pickup Time: {pickup_time}")
+    print(f"   📍 Pickup Location: {location_name}")
+    print(f"   🆔 Reservation ID: {reservation['reservation_id']}")
+    print(f"   📝 Additional Notes: {notes if notes else 'None'}")
+    print(f"   ")
+    print(f"   Please save this confirmation email for your records.")
+    print(f"   ")
+    print(f"   📋 What to bring for pickup:")
+    print(f"   • Valid ID for verification")
+    print(f"   • This confirmation email or reservation ID")
+    print(f"   • Any agreed-upon payment")
+    print(f"   ")
+    print(f"   If you need to modify or cancel your reservation, please contact us")
+    print(f"   as soon as possible with your reservation ID.")
+    print(f"   ")
+    print(f"   Thank you for choosing our service!")
+    print("   " + "="*60)
+    
+    return jsonify({
+        "success": True, 
+        "message": "Reservation created successfully",
+        "reservation_id": reservation['reservation_id'],
+        "alerts_sent": alerts_sent,
+        "pickup_details": {
+            "date": pickup_date,
+            "time": pickup_time,
+            "location": location_name,
+            "item": item_name
+        }
+    })
+
+# API endpoint to get user's reservations
+@app.route('/api/my_reservations')
+def get_my_reservations():
+    if "user" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    user = session['user']
+    user_reservations = []
+    
+    for item_id, item_reservations in reservations.items():
+        for reservation in item_reservations:
+            if reservation['user'] == user:
+                # Get item details
+                item_name = "Unknown Item"
+                if 0 <= int(item_id) < len(products_list):
+                    item_name = products_list[int(item_id)]['name']
+                
+                user_reservations.append({
+                    "item_id": item_id,
+                    "item_name": item_name,
+                    "pickup_date": reservation['pickup_date'],
+                    "pickup_time": reservation['pickup_time'],
+                    "status": reservation['status'],
+                    "reservation_id": reservation['reservation_id']
+                })
+    
+    return jsonify({
+        "success": True,
+        "reservations": user_reservations
+    })
+
+# API endpoint to disable booking alert
+@app.route('/api/disable_booking_alert', methods=['POST'])
+def disable_booking_alert():
+    if "user" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    data = request.get_json()
+    item_id = data.get('item_id')
+    
+    if not item_id:
+        return jsonify({"success": False, "message": "Item ID is required"}), 400
+    
+    user = session['user']
+    
+    # Remove or disable alert for this user and item
+    if user in booking_alerts and str(item_id) in booking_alerts[user]:
+        del booking_alerts[user][str(item_id)]
+        
+        # If user has no more alerts, remove user entry
+        if not booking_alerts[user]:
+            del booking_alerts[user]
+            
+        return jsonify({
+            "success": True,
+            "message": "Booking alert disabled successfully"
+        })
+    else:
+        return jsonify({
+            "success": False,
+            "message": "No booking alert found for this item"
+        })
+
+# API endpoint to get current user information
+@app.route('/api/current_user')
+def get_current_user():
+    if "user" in session:
+        return jsonify({
+            "success": True,
+            "user": session['user']
+        })
+    else:
+        return jsonify({
+            "success": False,
+            "user": "Guest User"
+        })
+
 
 # Logout Route
 @app.route('/logout')
@@ -384,6 +689,14 @@ def logout():
     session.pop("user", None)
     flash("You have been logged out.", "info")
     return redirect(url_for('index'))
+
+# Reminder Route
+@app.route('/reminder')
+def reminder():
+    if "user" not in session:
+        flash("Please log in to access notifications.", "warning")
+        return redirect(url_for("index"))
+    return render_template('reminder.html')
 
 
 if __name__ == "__main__":
