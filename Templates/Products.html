@@ -5,129 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marketplace</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    .search-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: white;
-      padding: 8px 15px;
-      border-radius: 25px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-    }
-    
-    .search-container:focus-within {
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      transform: translateY(-1px);
-    }
-    
-    .search-container input {
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 14px;
-      width: 200px;
-      padding: 5px;
-    }
-    
-    .search-icon {
-      color: #666;
-      font-size: 16px;
-    }
-    
-    .clear-search {
-      color: #999;
-      cursor: pointer;
-      font-size: 14px;
-      padding: 2px 5px;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-    }
-    
-    .clear-search:hover {
-      background: #f0f0f0;
-      color: #333;
-    }
-    
-    .search-results-info {
-      text-align: center;
-      padding: 20px;
-      color: #666;
-      font-style: italic;
-    }
-    
-    .no-results {
-      text-align: center;
-      padding: 60px 20px;
-      color: #999;
-    }
-    
-    .no-results-icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
-      opacity: 0.5;
-    }
-    
-    .filter-bar {
-      background: white;
-      padding: 15px 20px;
-      margin: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      display: none;
-    }
-    
-    .filter-bar.active {
-      display: block;
-    }
-    
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-    
-    .filter-group label {
-      font-weight: 600;
-      color: #333;
-      font-size: 14px;
-    }
-    
-    .filter-group select,
-    .filter-group input {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 14px;
-    }
-    
-    .filter-toggle {
-      background: #f8f9fa;
-      border: 1px solid #dee2e6;
-      color: #495057;
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    .filter-toggle:hover,
-    .filter-toggle.active {
-      background: #007bff;
-      color: white;
-      border-color: #007bff;
-    }
-    
-    .loading-spinner {
-      display: none;
-      text-align: center;
-      padding: 40px;
-      font-size: 20px;
-    }
-  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -140,45 +17,89 @@
         <input type="text" id="searchInput" placeholder="Search products, categories, features..." onkeyup="performSearch()">
         <span class="clear-search" id="clearSearch" onclick="clearSearch()" style="display: none;">✕</span>
       </div>
-      <!-- Filter Toggle -->
-      <button class="filter-toggle" id="filterToggle" onclick="toggleFilters()">🔧 Filters</button>
       <!-- Sell Button -->
       <a href="{{ url_for('upload') }}" class="btn">Sell</a>
-      <button class="btn active">Categories</button>
+      <!-- Categories Dropdown -->
+      <div class="categories-dropdown" id="categoriesDropdown">
+        <button class="btn active" id="categoriesBtn" onclick="toggleCategories()">Categories ▼</button>
+        <div class="categories-menu" id="categoriesMenu">
+          <div class="filter-section">
+            <h4>Filter by Category</h4>
+            <select id="categoryFilter">
+              <option value="">All Categories</option>
+              <option value="electronics">Electronics</option>
+              <option value="clothing">Clothing</option>
+              <option value="fashion">Fashion</option>
+              <option value="books">Books</option>
+              <option value="home">Home & Garden</option>
+            </select>
+          </div>
+          
+          <div class="filter-section">
+            <h4>Condition</h4>
+            <select id="conditionFilter">
+              <option value="">All Conditions</option>
+              <option value="new">New</option>
+              <option value="excellent">Excellent</option>
+              <option value="good">Good</option>
+              <option value="used">Used</option>
+              <option value="fair">Fair</option>
+            </select>
+          </div>
+          
+          <div class="filter-section">
+            <h4>Price Range</h4>
+            <div class="price-inputs">
+              <input type="number" id="minPrice" placeholder="Min $">
+              <span>-</span>
+              <input type="number" id="maxPrice" placeholder="Max $">
+            </div>
+          </div>
+          
+          <div class="filter-actions">
+            <button onclick="applyFilters()" class="apply-filters-btn">Apply Filters</button>
+            <button onclick="clearFilters()" class="clear-filters-btn">Clear Filters</button>
+            <button onclick="closeCategories()" class="close-menu-btn">Close</button>
+          </div>
+        </div>
+      </div>
     </div>
     
     <div class="nav-right">
       <!-- Wishlist Icon -->
       <a href="{{ url_for('wishlist') }}" class="wishlist-icon" title="View Wishlist">❤️</a>
-      <!-- User Icon - Logout -->
-      <div class="user-icon-container">
-        <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">👤</span>
-        <span class="logout-text" id="logoutText" onclick="logout()" style="display: none;">Logout</span>
+      <!-- User Icon - Dropdown -->
+      <div class="user-dropdown" id="userDropdown">
+        <span class="user-icon" onclick="toggleUserMenu()" title="User Menu">👤</span>
+        <div class="user-menu" id="userMenu">
+          <div class="user-menu-header">
+            <span class="user-avatar">👤</span>
+            <div class="user-info">
+              <span class="user-name">User</span>
+              <span class="user-status">Online</span>
+            </div>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-actions">
+            <button onclick="viewProfile()" class="menu-item">
+              <span class="menu-icon">�</span>
+              <span>Profile</span>
+            </button>
+            <button onclick="viewSettings()" class="menu-item">
+              <span class="menu-icon">⚙️</span>
+              <span>Settings</span>
+            </button>
+            <button onclick="logout()" class="menu-item logout-item">
+              <span class="menu-icon">🚪</span>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
   
-  <!-- Advanced Filters -->
-  <div class="filter-bar" id="filterBar">
-    <div class="filter-group">
-      <label>Category:</label>
-      <select id="categoryFilter" onchange="performSearch()">
-        <option value="">All Categories</option>
-        <option value="electronics">Electronics</option>
-        <option value="clothing">Clothing</option>
-        <option value="fashion">Fashion</option>
-        <option value="books">Books</option>
-        <option value="home">Home & Garden</option>
-      </select>
-      
-      <label>Price Range:</label>
-      <input type="number" id="minPrice" placeholder="Min $" onchange="performSearch()">
-      <span>-</span>
-      <input type="number" id="maxPrice" placeholder="Max $" onchange="performSearch()">
-      
-      <button onclick="clearFilters()" style="margin-left: 10px; padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">Clear</button>
-    </div>
-  </div>
+
   
   <!-- Search Results Info -->
   <div class="search-results-info" id="searchInfo" style="display: none;"></div>
@@ -189,7 +110,7 @@
   <!-- Products Grid -->
   <div class="products" id="productsContainer">
     {% for product in products %}
-    <div class="product" data-name="{{ product.name.lower() }}" data-category="{{ product.category.lower() }}" data-price="{{ product.price }}" data-features="{{ product.features.lower() }}">
+    <div class="product" data-name="{{ product.name.lower() }}" data-category="{{ product.category.lower() }}" data-price="{{ product.price }}" data-features="{{ product.features.lower() }}" data-condition="{{ product.condition.lower() if product.condition else 'good' }}">
       <a href="{{ url_for('message_seller', item_id=loop.index0) }}" class="product-image-link">
         <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
       </a>
@@ -206,7 +127,7 @@
     <div class="no-results-icon">🔍</div>
     <h3>No products found</h3>
     <p>Try adjusting your search terms or filters</p>
-    <button onclick="clearSearch()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px;">Clear Search</button>
+    <button onclick="clearSearch()" class="clear-search-btn">Clear Search</button>
   </div>
 
   <script>
@@ -222,38 +143,89 @@
         category: element.dataset.category,
         price: parseFloat(element.dataset.price),
         features: element.dataset.features,
+        condition: element.dataset.condition || 'good',
         index: index
       }));
     });
     
-    function toggleLogout() {
-      const logoutText = document.getElementById('logoutText');
-      const isVisible = logoutText.style.display !== 'none';
+    function toggleUserMenu() {
+      const userMenu = document.getElementById('userMenu');
+      const userIcon = document.querySelector('.user-icon');
       
-      if (isVisible) {
-        logoutText.style.display = 'none';
+      userMenu.classList.toggle('active');
+      
+      if (userMenu.classList.contains('active')) {
+        userIcon.classList.add('active');
       } else {
-        logoutText.style.display = 'inline-block';
+        userIcon.classList.remove('active');
       }
+    }
+    
+    function closeUserMenu() {
+      const userMenu = document.getElementById('userMenu');
+      const userIcon = document.querySelector('.user-icon');
+      
+      userMenu.classList.remove('active');
+      userIcon.classList.remove('active');
+    }
+    
+    function viewProfile() {
+      // Add profile functionality here
+      alert('Profile page coming soon!');
+      closeUserMenu();
+    }
+    
+    function viewSettings() {
+      // Add settings functionality here
+      alert('Settings page coming soon!');
+      closeUserMenu();
     }
     
     function logout() {
       window.location.href = "{{ url_for('logout') }}";
     }
     
-    function toggleFilters() {
-      const filterBar = document.getElementById('filterBar');
-      const filterToggle = document.getElementById('filterToggle');
+    function toggleCategories() {
+      const categoriesMenu = document.getElementById('categoriesMenu');
+      const categoriesBtn = document.getElementById('categoriesBtn');
       
-      filterBar.classList.toggle('active');
-      filterToggle.classList.toggle('active');
+      categoriesMenu.classList.toggle('active');
       
-      if (filterBar.classList.contains('active')) {
-        filterToggle.textContent = '🔧 Hide Filters';
+      if (categoriesMenu.classList.contains('active')) {
+        categoriesBtn.textContent = 'Categories ▲';
+        categoriesBtn.classList.add('filter-active');
       } else {
-        filterToggle.textContent = '🔧 Filters';
+        categoriesBtn.textContent = 'Categories ▼';
+        categoriesBtn.classList.remove('filter-active');
       }
     }
+    
+    function closeCategories() {
+      const categoriesMenu = document.getElementById('categoriesMenu');
+      const categoriesBtn = document.getElementById('categoriesBtn');
+      
+      categoriesMenu.classList.remove('active');
+      categoriesBtn.textContent = 'Categories ▼';
+      categoriesBtn.classList.remove('filter-active');
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+      const categoriesDropdown = document.getElementById('categoriesDropdown');
+      const categoriesMenu = document.getElementById('categoriesMenu');
+      const userDropdown = document.getElementById('userDropdown');
+      const userMenu = document.getElementById('userMenu');
+      
+      // Close categories dropdown
+      if (!categoriesDropdown.contains(event.target) && categoriesMenu.classList.contains('active')) {
+        closeCategories();
+      }
+      
+      // Close user dropdown
+      if (!userDropdown.contains(event.target) && userMenu.classList.contains('active')) {
+        closeUserMenu();
+      }
+    });
     
     function performSearch() {
       // Clear previous timeout
@@ -265,6 +237,7 @@
       searchTimeout = setTimeout(() => {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
         const category = document.getElementById('categoryFilter').value.toLowerCase();
+        const condition = document.getElementById('conditionFilter').value.toLowerCase();
         const minPrice = document.getElementById('minPrice').value;
         const maxPrice = document.getElementById('maxPrice').value;
         
@@ -287,6 +260,11 @@
             return false;
           }
           
+          // Condition filter
+          if (condition && condition !== product.condition) {
+            return false;
+          }
+          
           // Price range filter
           if (minPrice && product.price < parseFloat(minPrice)) {
             return false;
@@ -299,12 +277,12 @@
         });
         
         // Update display
-        updateProductDisplay(filteredProducts, searchTerm, category, minPrice, maxPrice);
+        updateProductDisplay(filteredProducts, searchTerm, category, condition, minPrice, maxPrice);
         
       }, 300); // 300ms delay for better UX
     }
     
-    function updateProductDisplay(filteredProducts, searchTerm, category, minPrice, maxPrice) {
+    function updateProductDisplay(filteredProducts, searchTerm, category, condition, minPrice, maxPrice) {
       const container = document.getElementById('productsContainer');
       const noResults = document.getElementById('noResults');
       const searchInfo = document.getElementById('searchInfo');
@@ -321,7 +299,7 @@
       
       // Update search info
       let searchInfoText = '';
-      if (searchTerm || category || minPrice || maxPrice) {
+      if (searchTerm || category || condition || minPrice || maxPrice) {
         const totalProducts = allProducts.length;
         const foundProducts = filteredProducts.length;
         
@@ -329,6 +307,7 @@
         
         if (searchTerm) searchInfoText += ` for "${searchTerm}"`;
         if (category) searchInfoText += ` in ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+        if (condition) searchInfoText += ` (${condition.charAt(0).toUpperCase() + condition.slice(1)} condition)`;
         if (minPrice || maxPrice) {
           searchInfoText += ` ($${minPrice || '0'} - $${maxPrice || '∞'})`;
         }
@@ -340,7 +319,7 @@
       }
       
       // Show/hide no results message
-      if (filteredProducts.length === 0 && (searchTerm || category || minPrice || maxPrice)) {
+      if (filteredProducts.length === 0 && (searchTerm || category || condition || minPrice || maxPrice)) {
         noResults.style.display = 'block';
         container.style.display = 'none';
       } else {
@@ -352,6 +331,7 @@
     function clearSearch() {
       document.getElementById('searchInput').value = '';
       document.getElementById('categoryFilter').value = '';
+      document.getElementById('conditionFilter').value = '';
       document.getElementById('minPrice').value = '';
       document.getElementById('maxPrice').value = '';
       document.getElementById('clearSearch').style.display = 'none';
@@ -367,8 +347,14 @@
       document.getElementById('productsContainer').style.display = 'grid';
     }
     
+    function applyFilters() {
+      performSearch();
+      closeCategories();
+    }
+    
     function clearFilters() {
       document.getElementById('categoryFilter').value = '';
+      document.getElementById('conditionFilter').value = '';
       document.getElementById('minPrice').value = '';
       document.getElementById('maxPrice').value = '';
       performSearch();

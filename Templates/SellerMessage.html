@@ -377,30 +377,389 @@
             const existingAlert = bookingAlerts.find(alert => alert.itemId === String(currentItemId));
             
             if (existingAlert) {
-                // Disable alert
-                if (confirm('Are you sure you want to disable booking alerts for this item?')) {
+                // Show custom disable confirmation modal
+                const currentProduct = getCurrentProduct();
+                showChatAlertDisableModal(currentProduct.name, existingAlert, () => {
+                    // User confirmed - proceed with disabling
                     const updatedAlerts = bookingAlerts.filter(alert => alert.itemId !== String(currentItemId));
                     localStorage.setItem('bookingAlerts', JSON.stringify(updatedAlerts));
                     
                     updateCurrentItemAlertStatus();
                     loadAllBookingAlerts();
-                }
+                    showChatMiniNotification('🔕 Alert disabled for this item', '#f44336');
+                    addRecentNotification(`Alert disabled for ${currentProduct.name}`, 'Alert Management');
+                });
             } else {
-                // Enable alert
-                const userEmail = getUserEmail();
-                if (!userEmail) {
-                    const email = prompt('Please enter your email address for booking alerts:');
-                    if (!email || !email.includes('@')) {
-                        alert('Valid email address required for booking alerts.');
-                        return;
+                // Show custom enable alert modal
+                showChatAlertEnableModal();
+            }
+        }
+        
+        function showChatAlertDisableModal(itemName, alertData, onConfirm) {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'chatAlertDisableOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                backdrop-filter: blur(8px);
+                animation: chatFadeIn 0.3s ease-out;
+            `;
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: white;
+                padding: 35px;
+                border-radius: 20px;
+                box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+                max-width: 460px;
+                width: 90%;
+                text-align: center;
+                animation: chatModalSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                position: relative;
+                border: 3px solid;
+                border-image: linear-gradient(135deg, #ff6b6b, #ee5a52, #ff8a80) 1;
+            `;
+            
+            const email = alertData ? alertData.email : '';
+            const dateCreated = alertData ? new Date(alertData.dateCreated).toLocaleDateString() : '';
+            const preferredDate = alertData ? alertData.preferredDate : '';
+            const preferredTime = alertData ? alertData.preferredTime : '';
+            const preferredLocation = alertData ? alertData.preferredLocation : '';
+            
+            modal.innerHTML = `
+                <div style="margin-bottom: 25px;">
+                    <div style="font-size: 3.5rem; margin-bottom: 15px; animation: chatBounce 0.6s ease-out;">🔕</div>
+                    <h2 style="color: #d32f2f; margin: 0 0 10px 0; font-size: 1.6rem; font-weight: 700;">
+                        Disable Chat Alert?
+                    </h2>
+                    <p style="color: #666; margin: 0; font-size: 0.95rem; line-height: 1.4;">
+                        You'll no longer receive notifications for this item
+                    </p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-radius: 15px; padding: 20px; margin: 20px 0; border: 2px solid #ffab91;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <span style="font-size: 1.8rem;">📦</span>
+                        <div style="text-align: left; flex: 1;">
+                            <h4 style="margin: 0 0 4px 0; color: #d32f2f; font-size: 1.1rem;">${itemName}</h4>
+                            ${email ? `<p style="margin: 2px 0; color: #666; font-size: 0.85rem;">📧 ${email}</p>` : ''}
+                            ${dateCreated ? `<p style="margin: 2px 0; color: #666; font-size: 0.85rem;">📅 Active since ${dateCreated}</p>` : ''}
+                            ${preferredDate ? `<p style="margin: 2px 0; color: #666; font-size: 0.85rem;">📅 Preferred: ${preferredDate}${preferredTime ? ` at ${preferredTime}` : ''}</p>` : ''}
+                            ${preferredLocation ? `<p style="margin: 2px 0; color: #666; font-size: 0.85rem;">📍 Location: ${preferredLocation}</p>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(211, 47, 47, 0.1); border-left: 3px solid #d32f2f; padding: 10px 12px; border-radius: 6px;">
+                        <p style="margin: 0; color: #b71c1c; font-size: 0.85rem; font-weight: 500;">
+                            ⚠️ No more booking notifications for this item
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; justify-content: center; margin-top: 25px;">
+                    <button id="chatConfirmDisable" style="
+                        background: linear-gradient(135deg, #f44336, #d32f2f);
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 20px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-size: 14px;
+                        box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+                        min-width: 120px;
+                    ">
+                        🔕 Disable
+                    </button>
+                    <button id="chatCancelDisable" style="
+                        background: linear-gradient(135deg, #2196f3, #1976d2);
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 20px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-size: 14px;
+                        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+                        min-width: 120px;
+                    ">
+                        🔔 Keep Active
+                    </button>
+                </div>
+                
+                <p style="color: #999; font-size: 0.75rem; margin: 15px 0 0 0; font-style: italic;">
+                    Press Escape to cancel
+                </p>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Add animation styles
+            if (!document.getElementById('chatModalStyles')) {
+                const style = document.createElement('style');
+                style.id = 'chatModalStyles';
+                style.textContent = `
+                    @keyframes chatFadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
                     }
-                    localStorage.setItem('userEmail', email);
+                    @keyframes chatModalSlide {
+                        from { 
+                            opacity: 0; 
+                            transform: translateY(-40px) scale(0.8); 
+                        }
+                        to { 
+                            opacity: 1; 
+                            transform: translateY(0) scale(1); 
+                        }
+                    }
+                    @keyframes chatBounce {
+                        0%, 20%, 60%, 100% { transform: translateY(0); }
+                        40% { transform: translateY(-8px); }
+                        80% { transform: translateY(-4px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Button interactions
+            const confirmBtn = modal.querySelector('#chatConfirmDisable');
+            const cancelBtn = modal.querySelector('#chatCancelDisable');
+            
+            [confirmBtn, cancelBtn].forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.transform = 'translateY(-2px) scale(1.02)';
+                    btn.style.boxShadow = btn === confirmBtn ? 
+                        '0 6px 20px rgba(244, 67, 54, 0.6)' : 
+                        '0 6px 20px rgba(33, 150, 243, 0.6)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'translateY(0) scale(1)';
+                    btn.style.boxShadow = btn === confirmBtn ? 
+                        '0 4px 12px rgba(244, 67, 54, 0.4)' : 
+                        '0 4px 12px rgba(33, 150, 243, 0.4)';
+                });
+            });
+            
+            confirmBtn.addEventListener('click', () => {
+                closeChatAlertModal();
+                onConfirm();
+            });
+            
+            cancelBtn.addEventListener('click', () => {
+                closeChatAlertModal();
+                showChatMiniNotification('🔔 Alert kept active!', '#4CAF50');
+            });
+            
+            // Close on overlay click and Escape key
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeChatAlertModal();
+            });
+            
+            document.addEventListener('keydown', function escapeHandler(e) {
+                if (e.key === 'Escape') {
+                    closeChatAlertModal();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            });
+            
+            setTimeout(() => cancelBtn.focus(), 100);
+        }
+        
+        function showChatAlertEnableModal() {
+            // Create modal overlay for enabling alerts
+            const overlay = document.createElement('div');
+            overlay.id = 'chatAlertEnableOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                backdrop-filter: blur(8px);
+                animation: chatFadeIn 0.3s ease-out;
+            `;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: white;
+                padding: 35px;
+                border-radius: 20px;
+                box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+                max-width: 480px;
+                width: 90%;
+                text-align: center;
+                animation: chatModalSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                border: 3px solid;
+                border-image: linear-gradient(135deg, #4CAF50, #8BC34A, #66BB6A) 1;
+            `;
+            
+            const currentProduct = getCurrentProduct();
+            const userEmail = getUserEmail();
+            
+            modal.innerHTML = `
+                <div style="margin-bottom: 25px;">
+                    <div style="font-size: 3.5rem; margin-bottom: 15px; animation: chatBounce 0.6s ease-out;">🔔</div>
+                    <h2 style="color: #2e7d32; margin: 0 0 10px 0; font-size: 1.6rem; font-weight: 700;">
+                        Enable Booking Alerts
+                    </h2>
+                    <p style="color: #666; margin: 0; font-size: 0.95rem; line-height: 1.4;">
+                        Get notified when someone books this item
+                    </p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%); border-radius: 15px; padding: 20px; margin: 20px 0; border: 2px solid #a5d6a7;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                        <span style="font-size: 1.8rem;">📦</span>
+                        <div style="text-align: left; flex: 1;">
+                            <h4 style="margin: 0 0 4px 0; color: #2e7d32; font-size: 1.1rem;">${currentProduct.name}</h4>
+                            <p style="margin: 0; color: #666; font-size: 0.85rem;">You'll be notified instantly via email</p>
+                        </div>
+                    </div>
+                    
+                    <div class="email-input-group" style="margin: 15px 0;">
+                        <label style="display: block; text-align: left; margin-bottom: 8px; color: #2e7d32; font-weight: 600; font-size: 0.9rem;">
+                            📧 Your Email Address:
+                        </label>
+                        <input type="email" id="chatAlertEmail" placeholder="your.email@example.com" value="${userEmail}" 
+                               style="width: 100%; padding: 10px 12px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+                               required>
+                    </div>
+                    
+                    <div class="time-input-group" style="margin: 15px 0;">
+                        <label style="display: block; text-align: left; margin-bottom: 8px; color: #2e7d32; font-weight: 600; font-size: 0.9rem;">
+                            ⏰ Preferred Pickup Time:
+                        </label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="date" id="chatAlertDate" 
+                                   style="flex: 1; padding: 10px 12px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px;"
+                                   min="${new Date().toISOString().split('T')[0]}">
+                            <input type="time" id="chatAlertTime" 
+                                   style="flex: 1; padding: 10px 12px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px;">
+                        </div>
+                    </div>
+                    
+                    <div class="location-input-group" style="margin: 15px 0;">
+                        <label style="display: block; text-align: left; margin-bottom: 8px; color: #2e7d32; font-weight: 600; font-size: 0.9rem;">
+                            📍 Preferred Pickup Location:
+                        </label>
+                        <input type="text" id="chatAlertLocation" placeholder="e.g., Downtown Mall, Campus Library, Your Address..." 
+                               style="width: 100%; padding: 10px 12px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                    </div>
+                    
+                    <div style="background: rgba(46, 125, 50, 0.1); border-left: 3px solid #4CAF50; padding: 10px 12px; border-radius: 6px; margin-top: 12px;">
+                        <p style="margin: 0; color: #1b5e20; font-size: 0.85rem; font-weight: 500;">
+                            ✨ Instant email notifications when this item gets booked
+                        </p>
+                        <p style="margin: 5px 0 0 0; color: #2e7d32; font-size: 0.8rem;">
+                            💡 Time & location preferences help sellers coordinate pickup
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; justify-content: center; margin-top: 25px;">
+                    <button id="chatConfirmEnable" style="
+                        background: linear-gradient(135deg, #4CAF50, #2e7d32);
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 20px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-size: 14px;
+                        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+                        min-width: 130px;
+                    ">
+                        🔔 Enable Alerts
+                    </button>
+                    <button id="chatCancelEnable" style="
+                        background: linear-gradient(135deg, #757575, #424242);
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 20px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-size: 14px;
+                        box-shadow: 0 4px 12px rgba(117, 117, 117, 0.4);
+                        min-width: 100px;
+                    ">
+                        Cancel
+                    </button>
+                </div>
+                
+                <p style="color: #999; font-size: 0.75rem; margin: 15px 0 0 0; font-style: italic;">
+                    Your email is only used for booking notifications
+                </p>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            const emailInput = modal.querySelector('#chatAlertEmail');
+            const confirmBtn = modal.querySelector('#chatConfirmEnable');
+            const cancelBtn = modal.querySelector('#chatCancelEnable');
+            
+            // Focus email input
+            setTimeout(() => {
+                emailInput.focus();
+                if (userEmail) emailInput.select();
+            }, 100);
+            
+            // Button interactions
+            [confirmBtn, cancelBtn].forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.transform = 'translateY(-2px) scale(1.02)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+            
+            confirmBtn.addEventListener('click', () => {
+                const email = emailInput.value.trim();
+                const date = modal.querySelector('#chatAlertDate').value;
+                const time = modal.querySelector('#chatAlertTime').value;
+                const location = modal.querySelector('#chatAlertLocation').value.trim();
+                
+                if (!email || !email.includes('@')) {
+                    emailInput.style.borderColor = '#f44336';
+                    emailInput.focus();
+                    return;
                 }
                 
+                // Save email and enable alert
+                localStorage.setItem('userEmail', email);
+                
                 const currentProduct = getCurrentProduct();
+                const bookingAlerts = JSON.parse(localStorage.getItem('bookingAlerts') || '[]');
                 const alertData = {
                     itemId: String(currentItemId),
                     itemName: currentProduct.name,
+                    email: email,
+                    preferredDate: date,
+                    preferredTime: time,
+                    preferredLocation: location,
                     enabled: true,
                     dateCreated: new Date().toISOString(),
                     emailSent: false
@@ -409,10 +768,68 @@
                 bookingAlerts.push(alertData);
                 localStorage.setItem('bookingAlerts', JSON.stringify(bookingAlerts));
                 
+                closeChatAlertModal('chatAlertEnableOverlay');
                 updateCurrentItemAlertStatus();
                 loadAllBookingAlerts();
+                
+                let message = '✅ Booking alerts enabled!';
+                if (date || time || location) {
+                    message += ' Preferences saved.';
+                }
+                showChatMiniNotification(message, '#4CAF50');
                 addRecentNotification(`Alerts enabled for ${currentProduct.name}`, 'Alert Setup');
+            });
+            
+            cancelBtn.addEventListener('click', () => {
+                closeChatAlertModal('chatAlertEnableOverlay');
+            });
+            
+            // Close handlers
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeChatAlertModal('chatAlertEnableOverlay');
+            });
+            
+            document.addEventListener('keydown', function escapeHandler(e) {
+                if (e.key === 'Escape') {
+                    closeChatAlertModal('chatAlertEnableOverlay');
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            });
+        }
+        
+        function closeChatAlertModal(overlayId = 'chatAlertDisableOverlay') {
+            const overlay = document.getElementById(overlayId);
+            if (overlay) {
+                overlay.style.animation = 'fadeOut 0.3s ease-in';
+                setTimeout(() => overlay.remove(), 300);
             }
+        }
+        
+        function showChatMiniNotification(message, color = '#4CAF50') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${color};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 20px;
+                font-weight: 600;
+                font-size: 14px;
+                z-index: 10001;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                animation: slideInRight 0.4s ease-out;
+                max-width: 300px;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.4s ease-in';
+                setTimeout(() => notification.remove(), 400);
+            }, 3000);
         }
         
         function loadAllBookingAlerts() {

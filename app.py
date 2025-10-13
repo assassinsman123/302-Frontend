@@ -372,11 +372,8 @@ def dashboard():
 # Wishlist Routes
 @app.route('/wishlist')
 def wishlist():
-    if "user" not in session:
-        flash("Please log in to view your wishlist.", "warning")
-        return redirect(url_for("index"))
-    
-    user = session['user']
+    # Ensure user session exists (auto-create if needed)
+    user = ensure_user_session()
     user_wishlist_items = user_wishlists.get(user, [])
     
     # Get full product details for wishlist items
@@ -391,13 +388,8 @@ def wishlist():
 
 @app.route('/add_to_wishlist/<int:item_id>')
 def add_to_wishlist(item_id):
-    if "user" not in session:
-        if request.headers.get('Content-Type') == 'application/json' or request.args.get('ajax'):
-            return jsonify({"success": False, "message": "Please log in to add items to wishlist."}), 401
-        flash("Please log in to add items to wishlist.", "warning")
-        return redirect(url_for("index"))
-    
-    user = session['user']
+    # Ensure user session exists (auto-create if needed)
+    user = ensure_user_session()
     if user not in user_wishlists:
         user_wishlists[user] = []
     
@@ -432,11 +424,8 @@ def add_to_wishlist(item_id):
 
 @app.route('/remove_from_wishlist/<int:item_id>')
 def remove_from_wishlist(item_id):
-    if "user" not in session:
-        flash("Please log in to manage your wishlist.", "warning")
-        return redirect(url_for("index"))
-    
-    user = session['user']
+    # Ensure user session exists (auto-create if needed)
+    user = ensure_user_session()
     if user in user_wishlists and item_id in user_wishlists[user]:
         user_wishlists[user].remove(item_id)
         flash(f"Removed {products_list[item_id]['name']} from your wishlist!", "success")
@@ -447,13 +436,8 @@ def remove_from_wishlist(item_id):
 
 @app.route('/toggle_wishlist/<int:item_id>')
 def toggle_wishlist(item_id):
-    if "user" not in session:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
-            return jsonify({"success": False, "message": "Please log in to manage your wishlist."}), 401
-        flash("Please log in to manage your wishlist.", "warning")
-        return redirect(url_for("index"))
-    
-    user = session['user']
+    # Ensure user session exists (auto-create if needed)
+    user = ensure_user_session()
     if user not in user_wishlists:
         user_wishlists[user] = []
     
