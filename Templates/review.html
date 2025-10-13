@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Product Reviews - {{product[1]}}</title>
+    <title>{% if seller_name %}{{ seller_name }} - Seller Reviews{% else %}Seller Reviews{% endif %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
     
@@ -12,7 +12,7 @@
        <nav class="navbar">
            <div class="nav-left">
                <button onclick="history.back()" class="back-btn" title="Go Back">←</button>
-               <h2>Product Reviews</h2>
+               <h2>Seller Reviews</h2>
            </div>
            
            <div class="nav-right">
@@ -25,18 +25,60 @@
        </nav>
 
        <div class="review-container">
-           <!-- Product Information -->
-           <div class="product-header">
-               <h1 class="product-title">{{product[1]}}</h1>
-               <div class="product-details">
-                   <p class="product-price">${{product[2]}}</p>
-                   <p class="product-description">{{product[3]}}</p>
+           <!-- Seller Information -->
+           {% if seller_name %}
+           <div class="seller-header">
+               <div class="seller-profile">
+                   <div class="seller-avatar">
+                       <span class="seller-icon">👨‍💼</span>
+                   </div>
+                   <div class="seller-info">
+                       <h1 class="seller-name">{{ seller_name }}</h1>
+                       <div class="seller-stats">
+                           {% if seller_avg_rating > 0 %}
+                           <div class="rating-summary">
+                               <div class="rating-display">
+                                   {% for i in range(seller_avg_rating|int) %}
+                                       <span class="star">★</span>
+                                   {% endfor %}
+                                   {% if seller_avg_rating % 1 >= 0.5 %}
+                                       <span class="star half">★</span>
+                                   {% endif %}
+                                   {% for i in range(5 - (seller_avg_rating|int + (1 if seller_avg_rating % 1 >= 0.5 else 0))) %}
+                                       <span class="star empty">☆</span>
+                                   {% endfor %}
+                                   <span class="rating-number">({{ seller_avg_rating }}/5)</span>
+                               </div>
+                               <p class="review-count">{{ seller_review_count }} reviews</p>
+                           </div>
+                           {% endif %}
+                           <div class="seller-status">
+                               <span class="online-indicator">●</span>
+                               <span class="status-text">Online Now</span>
+                           </div>
+                       </div>
+                   </div>
                </div>
            </div>
+           {% endif %}
+
+           <!-- Product Information (for context) -->
+           {% if product_info %}
+           <div class="product-context">
+               <div class="product-preview">
+                   <img src="{{ url_for('static', filename=product_info.image) }}" alt="{{ product_info.name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                   <div class="product-details">
+                       <h3>{{ product_info.name }}</h3>
+                       <p class="product-price">${{ product_info.price }}</p>
+                   </div>
+               </div>
+               <p class="context-text">You are reviewing the seller of this item</p>
+           </div>
+           {% endif %}
 
            <!-- Review Form -->
            <div class="review-form-section">
-               <h2>Submit a Review</h2>
+               <h2>{% if seller_name %}Write a Review for {{ seller_name }}{% else %}Submit a Seller Review{% endif %}</h2>
                <form method="POST" class="review-form">
                    <div class="form-group">
                        <label for="rating">Rating:</label>
@@ -48,7 +90,7 @@
                    
                    <div class="form-group">
                        <label for="comment">Your Review:</label>
-                       <textarea id="comment" name="comment" placeholder="Share your experience with this product..." required></textarea>
+                       <textarea id="comment" name="comment" placeholder="{% if seller_name %}Share your experience buying from {{ seller_name }}...{% else %}Share your experience with this seller...{% endif %}" required></textarea>
                    </div>
                    
                    <div class="form-actions">
@@ -58,15 +100,15 @@
                </form>
            </div>
 
-           <!-- Reviews Display -->
+           <!-- Seller Reviews Display -->
            <div class="reviews-section">
-               <h2>Customer Reviews</h2>
-               {% if reviews %}
+               <h2>{% if seller_name %}Reviews for {{ seller_name }}{% else %}Seller Reviews{% endif %}</h2>
+               {% if seller_reviews %}
                    <div class="reviews-list">
-                       {% for review in reviews %}
+                       {% for review in seller_reviews %}
                        <div class="review-item">
                            <div class="review-header">
-                               <span class="reviewer-name">{{review[0]}}</span>
+                               <span class="reviewer-name">{{ review[0] }}</span>
                                <div class="rating-display">
                                    {% for i in range(review[1]) %}
                                        <span class="star">★</span>
@@ -74,16 +116,16 @@
                                    {% for i in range(5 - review[1]) %}
                                        <span class="star empty">☆</span>
                                    {% endfor %}
-                                   <span class="rating-number">({{review[1]}}/5)</span>
+                                   <span class="rating-number">({{ review[1] }}/5)</span>
                                </div>
                            </div>
-                           <p class="review-comment">{{review[2]}}</p>
+                           <p class="review-comment">{{ review[2] }}</p>
                        </div>
                        {% endfor %}
                    </div>
                {% else %}
                    <div class="no-reviews">
-                       <p>No reviews yet. Be the first to review this product!</p>
+                       <p>{% if seller_name %}No reviews yet for {{ seller_name }}. Be the first to review this seller!{% else %}No seller reviews yet. Be the first to review!{% endif %}</p>
                    </div>
                {% endif %}
            </div>

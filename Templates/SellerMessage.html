@@ -15,11 +15,6 @@
         </div>
         
         <div class="nav-right">
-            <!-- Current User Display -->
-            <div class="current-user-display">
-                <span class="user-name" id="currentUserName"></span>
-            </div>
-            
             <!-- Notification Bell Icon -->
             <div class="notification-bell" onclick="toggleNotificationPanel()" title="Booking Alerts & Notifications">
                 <span class="bell-icon">🔔</span>
@@ -28,7 +23,7 @@
             
             <!-- User Icon - Logout -->
             <div class="user-icon-container">
-                <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">⚙️</span>
+                <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">👤</span>
                 <span class="logout-text" id="logoutText" onclick="logout()" style="display: none;">Logout</span>
             </div>
         </div>
@@ -549,29 +544,6 @@
             window.location.href = `/reminder?item_id=${currentItemId}&item_name=${encodeURIComponent(getCurrentProduct().name)}&action=manage_all`;
         }
         
-        function loadCurrentUser() {
-            // Get current user from session
-            fetch('/api/current_user')
-                .then(response => response.json())
-                .then(data => {
-                    const userNameElement = document.getElementById('currentUserName');
-                    if (userNameElement && data.user) {
-                        userNameElement.textContent = data.user;
-                        userNameElement.style.color = '#007BFF';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading user:', error);
-                    const userNameElement = document.getElementById('currentUserName');
-                    if (userNameElement) {
-                        userNameElement.textContent = '';
-                    }
-                });
-            
-            // Load seller information
-            loadSellerInfo();
-        }
-        
         function loadSellerInfo() {
             // Dynamic seller names based on item ID
             const sellers = {
@@ -594,60 +566,8 @@
         function showSellerProfile() {
             const sellerName = document.getElementById('sellerNameHeader').textContent;
             
-            // Create seller profile info based on seller name
-            const sellerProfiles = {
-                'Alex Thompson': {
-                    bio: 'Experienced tech enthusiast with 5+ years selling electronics. All items thoroughly tested.',
-                    location: 'Downtown Campus',
-                    joinDate: 'Member since 2020',
-                    specialties: ['Electronics', 'Gadgets', 'Smart Devices']
-                },
-                'Sarah Johnson': {
-                    bio: 'Fashion-forward student selling quality clothing and accessories. Great condition guaranteed.',
-                    location: 'University District',
-                    joinDate: 'Member since 2021',
-                    specialties: ['Fashion', 'Clothing', 'Accessories']
-                },
-                'Mike Chen': {
-                    bio: 'Reliable seller specializing in everyday essentials and clothing. Fast pickup coordination.',
-                    location: 'Central Campus',
-                    joinDate: 'Member since 2019',
-                    specialties: ['Clothing', 'Essentials', 'Daily Items']
-                },
-                'Emily Davis': {
-                    bio: 'Detail-oriented seller with a focus on quality items. Professional and responsive.',
-                    location: 'East Campus',
-                    joinDate: 'Member since 2022',
-                    specialties: ['General Items', 'Books', 'Supplies']
-                },
-                'David Wilson': {
-                    bio: 'Tech professional selling premium electronics and accessories. Excellent condition items.',
-                    location: 'Tech District',
-                    joinDate: 'Member since 2018',
-                    specialties: ['Electronics', 'Mobile Devices', 'Computers']
-                },
-                'Lisa Garcia': {
-                    bio: 'Fashion enthusiast with great taste in shoes and accessories. Authentic items only.',
-                    location: 'Fashion District',
-                    joinDate: 'Member since 2021',
-                    specialties: ['Shoes', 'Fashion', 'Style Accessories']
-                }
-            };
-            
-            const profile = sellerProfiles[sellerName] || {
-                bio: 'Reliable marketplace seller committed to quality items and excellent service.',
-                location: 'Local Area',
-                joinDate: 'Member since 2020',
-                specialties: ['Various Items']
-            };
-            
-            alert(`👨‍💼 ${sellerName} - Seller Profile\\n\\n` +
-                  `📍 Location: ${profile.location}\\n` +
-                  `📅 ${profile.joinDate}\\n` +
-                  `🏷️ Specializes in: ${profile.specialties.join(', ')}\\n\\n` +
-                  `ℹ️ About: ${profile.bio}\\n\\n` +
-                  `⭐ Rating: 4.8/5 (24 reviews)\\n` +
-                  `✅ Verified Seller • 🟢 Online Now`);
+            // Navigate to review page with seller parameter
+            window.location.href = `/review?seller=${encodeURIComponent(sellerName)}&item_id=${currentItemId}`;
         }
 
         // Chat functionality

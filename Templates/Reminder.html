@@ -15,15 +15,9 @@
         </div>
         
         <div class="nav-right">
-            <!-- Current User Display -->
-            <div class="current-user-display">
-                <span class="user-avatar">👤</span>
-                <span class="user-name" id="currentUserName">Guest User</span>
-            </div>
-            
             <!-- User Icon - Logout -->
             <div class="user-icon-container">
-                <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">⚙️</span>
+                <span class="user-icon" onclick="toggleLogout()" title="Click to show logout option">👤</span>
                 <span class="logout-text" id="logoutText" onclick="logout()" style="display: none;">Logout</span>
             </div>
         </div>
@@ -536,7 +530,6 @@
             loadNotifications();
             initializeBookingForm();
             handleURLParameters();
-            loadCurrentUser();
             
             // Add some sample notifications if none exist
             if (recentNotifications.length === 0) {
@@ -1034,32 +1027,6 @@
             updateActiveRemindersDisplay();
             saveNotifications();
         };
-        
-        function loadCurrentUser() {
-            // Get current user from session
-            fetch('/api/current_user')
-                .then(response => response.json())
-                .then(data => {
-                    const userNameElement = document.getElementById('currentUserName');
-                    if (userNameElement) {
-                        if (data.user && data.user !== 'Guest User') {
-                            userNameElement.textContent = data.user;
-                            userNameElement.style.color = '#007BFF';
-                        } else {
-                            userNameElement.textContent = 'Guest User';
-                            userNameElement.style.color = '#666';
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading user:', error);
-                    const userNameElement = document.getElementById('currentUserName');
-                    if (userNameElement) {
-                        userNameElement.textContent = 'Guest User';
-                        userNameElement.style.color = '#666';
-                    }
-                });
-        }
     </script>
 </body>
 </html>

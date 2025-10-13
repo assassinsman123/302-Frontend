@@ -99,7 +99,6 @@ def signup():
 def index():
     if request.method == "POST":
         # Automatically log in the user and redirect to the products page
-        session['user'] = "guest_user"  # Set a default user session
         flash("Login successful!", "success")
         return redirect(url_for('products'))  # Redirect to the products page
 
@@ -170,17 +169,104 @@ def upload():
 # Review Route
 @app.route('/review', methods=['GET', 'POST'])
 def review():
-    if "user" not in session:
-        flash("Please log in to submit a review.", "warning")
-        return redirect(url_for("index"))
+    seller_name = request.args.get('seller')
+    item_id = request.args.get('item_id')
     
     if request.method == "POST":
+        if "user" not in session:
+            flash("Please log in to submit a review.", "warning")
+            return redirect(url_for("index"))
+        
         rating = request.form['rating']
         comment = request.form['comment']
-        flash("Thank you for your review!", "success")
+        flash("Thank you for your seller review!", "success")
         return redirect(url_for('products'))
     
-    return render_template('review.html')
+    # Get product information if item_id is provided
+    product_info = None
+    if item_id:
+        try:
+            item_index = int(item_id)
+            if 0 <= item_index < len(products_list):
+                product_info = products_list[item_index]
+        except (ValueError, TypeError):
+            pass
+    
+    # Sample seller reviews data - Fair and Critical
+    seller_reviews = {
+        'Alex Thompson': [
+            ('Jessica M.', 5, 'Excellent seller! The laptop was exactly as described and in perfect condition. Quick and professional transaction.'),
+            ('Mike R.', 4, 'Good communication and the smartwatch works well, but pickup took longer than expected. Item had minor scratches not mentioned.'),
+            ('Sarah K.', 3, 'Item was functional but condition was worse than described. Seller was responsive but should be more accurate about wear.'),
+            ('David L.', 5, 'Outstanding seller! Very knowledgeable about electronics and provided great support after purchase.'),
+            ('Amy T.', 2, 'Phone had battery issues that weren\'t disclosed. Seller refused partial refund. Disappointing experience.'),
+            ('Chris W.', 4, 'Decent transaction overall. Item worked as expected but packaging could have been better for electronics.'),
+            ('Lisa H.', 3, 'Seller was late to pickup meeting and item had more wear than photos showed. Works fine though.')
+        ],
+        'Sarah Johnson': [
+            ('Emily T.', 5, 'Amazing clothes in perfect condition! Great style and exactly my size. Highly recommend!'),
+            ('Lisa P.', 3, 'Clothing items were okay but had some stains not visible in photos. Seller was apologetic and offered small discount.'),
+            ('Amanda S.', 4, 'Good fashion sense and reasonable prices. One item smelled like cigarette smoke but aired out fine.'),
+            ('Rachel M.', 5, 'Professional and responsive. The accessories were exactly what I was looking for.'),
+            ('Jordan K.', 2, 'Sizes were completely wrong despite asking for measurements. Had to return items. Wasted my time.'),
+            ('Taylor B.', 4, 'Nice selection but some items were more worn than expected. Fair prices though.'),
+            ('Morgan F.', 3, 'Clothes were clean but had pet hair all over them. Seller should mention having pets.')
+        ],
+        'Mike Chen': [
+            ('John D.', 4, 'Reliable seller with good everyday items. Fair prices and convenient pickup location.'),
+            ('Maria G.', 3, 'Items were as described but seller was 30 minutes late without notice. Communication could be better.'),
+            ('Tom W.', 4, 'Good experience overall. Item had minor issues but seller was honest about condition.'),
+            ('Nina F.', 2, 'Seller cancelled last minute twice. When we finally met, item wasn\'t as clean as expected.'),
+            ('Alex R.', 5, 'Excellent service! Fast response and items were better than described. Very trustworthy.'),
+            ('Sam L.', 3, 'Okay transaction but seller seemed disorganized. Had to remind them about our meeting time.'),
+            ('Pat M.', 4, 'Fair prices and honest about item conditions. Would buy again but expect minor delays.')
+        ],
+        'Emily Davis': [
+            ('Alex C.', 5, 'Very detailed and professional seller. The books were in excellent condition with accurate descriptions.'),
+            ('Grace H.', 3, 'Books were okay but had more highlighting and notes than mentioned. Seller was understanding about complaint.'),
+            ('Chris B.', 4, 'Good attention to detail but prices are a bit high for used items. Quality is consistent though.'),
+            ('Zoe L.', 2, 'Several books had missing pages that weren\'t disclosed. Seller needs to check items more carefully.'),
+            ('River J.', 4, 'Professional transaction and items exactly as described. Pickup was smooth and efficient.'),
+            ('Sage K.', 3, 'Items were clean but seller is very picky about pickup times. Limited flexibility.'),
+            ('Avery N.', 5, 'Outstanding seller! Goes above and beyond to ensure customer satisfaction. Highly recommended.')
+        ],
+        'David Wilson': [
+            ('Kevin M.', 4, 'Good tech knowledge but phone had some software issues not mentioned. Seller helped resolve them.'),
+            ('Ashley R.', 5, 'Premium quality electronics at great prices. Excellent seller with fast service and honest descriptions.'),
+            ('Ryan P.', 2, 'Laptop had overheating problems that seller claimed to not know about. Felt misled about condition.'),
+            ('Megan T.', 4, 'Professional tech seller but prices are on the higher side. Quality justifies cost though.'),
+            ('Blake S.', 3, 'Electronics work but had to factory reset due to previous owner\'s data still on device. Awkward.'),
+            ('Casey D.', 5, 'Excellent experience! Seller provided original chargers and boxes. Very thorough testing before sale.'),
+            ('Quinn R.', 3, 'Item worked but seller was pushy about quick pickup and payment. Felt rushed during transaction.')
+        ],
+        'Lisa Garcia': [
+            ('Sophie J.', 4, 'Great shoe collection but some items had odor issues. Seller offered to clean them which was nice.'),
+            ('Isabella W.', 3, 'Shoes were authentic but more worn than photos suggested. Seller should take better pictures.'),
+            ('Olivia M.', 5, 'Authentic designer items at great prices! Seller is knowledgeable about fashion and very helpful.'),
+            ('Chloe D.', 2, 'Shoes didn\'t fit despite seller saying they ran true to size. No returns policy was disappointing.'),
+            ('Harper L.', 4, 'Good selection and fair prices. One pair had a loose sole but seller offered partial refund.'),
+            ('Peyton M.', 3, 'Items were clean but seller was very particular about meeting locations. Limited to her schedule only.'),
+            ('Emery C.', 5, 'Excellent taste in fashion! Items were exactly as described and seller included shoe care tips.')
+        ]
+    }
+    
+    # Get reviews for the specific seller
+    seller_review_list = seller_reviews.get(seller_name, [])
+    
+    # Calculate average rating
+    seller_avg_rating = 0
+    
+    if seller_review_list:
+        total_rating = sum(review[1] for review in seller_review_list)
+        seller_avg_rating = round(total_rating / len(seller_review_list), 1)
+    
+    return render_template('review.html', 
+                         seller_name=seller_name, 
+                         seller_reviews=seller_review_list, 
+                         seller_avg_rating=seller_avg_rating,
+                         seller_review_count=len(seller_review_list),
+                         product_info=product_info,
+                         item_id=item_id)
 
 @app.route('/item/<int:item_id>/message', methods=['GET', 'POST'])
 def message_seller(item_id):
@@ -679,7 +765,7 @@ def get_current_user():
     else:
         return jsonify({
             "success": False,
-            "user": "Guest User"
+            "user": ""
         })
 
 
