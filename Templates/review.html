@@ -28,11 +28,11 @@
            {% if seller_name %}
            <div class="seller-header">
                <div class="seller-profile">
-                   <div class="seller-avatar">
-                       <span class="seller-icon">👨‍💼</span>
-                   </div>
                    <div class="seller-info">
-                       <h1 class="seller-name">{{ seller_name }}</h1>
+                       <h1 class="seller-name">
+                           <span class="seller-icon">👨‍💼</span>
+                           {{ seller_name }}
+                       </h1>
                        <div class="seller-stats">
                            {% if seller_avg_rating > 0 %}
                            <div class="rating-summary">

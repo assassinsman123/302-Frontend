@@ -176,67 +176,19 @@
     </div>
 
     <script>
-        // Sample product data (in a real app, this would come from your backend/API)
-        const sampleProducts = [
-            {
-                id: 0,
-                name: "Smart Watch",
-                price: 89,
-                image: "../static/images/daniel-korpai-hbTKIbuMmBI-unsplash.jpg",
-                category: "Electronics"
-            },
-            {
-                id: 1,
-                name: "Laptop",
-                price: 59,
-                image: "../static/images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg",
-                category: "Electronics"
-            },
-            {
-                id: 2,
-                name: "Pants",
-                price: 20,
-                image: "../static/images/matthew-moloney-YeGao3uk8kI-unsplash.jpg",
-                category: "Clothing"
-            },
-            {
-                id: 3,
-                name: "T-Shirts",
-                price: 15,
-                image: "../static/images/ryan-hoffman-6Nub980bI3I-unsplash.jpg",
-                category: "Clothing"
-            },
-            {
-                id: 4,
-                name: "Smart Phone",
-                price: 55,
-                image: "../static/images/shiwa-id-Uae7ouMw91A-unsplash.jpg",
-                category: "Electronics"
-            },
-            {
-                id: 5,
-                name: "Shoes",
-                price: 20,
-                image: "../static/images/xavier-teo-SxAXphIPWeg-unsplash.jpg",
-                category: "Fashion"
-            }
-        ];
+        // Product data from Flask backend
+        const currentProductData = {
+            id: {{ item_id }},
+            name: "{{ item.name }}",
+            price: {{ item.price }},
+            image: "{{ item.image }}",
+            category: "{{ item.category }}"
+        };
 
-        // Get product information from URL parameters or default to first product
+        // Get product information from Flask-provided data
         function getCurrentProduct() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const productId = urlParams.get('product') || urlParams.get('item') || '0';
-            const productIndex = parseInt(productId, 10);
-            
-            console.log('URL params:', window.location.search);
-            console.log('Product ID from URL:', productId);
-            console.log('Product Index:', productIndex);
-            
-            // Return the product if it exists, otherwise return the first product as default
-            const selectedProduct = sampleProducts[productIndex] || sampleProducts[0];
-            console.log('Selected product:', selectedProduct);
-            
-            return selectedProduct;
+            console.log('Using Flask-provided product data:', currentProductData);
+            return currentProductData;
         }
 
         // Load and display product information
@@ -269,9 +221,12 @@
                     console.log('Image loaded successfully:', this.src);
                 };
                 
+                // Construct proper image path with Flask url_for pattern
+                const imagePath = `/static/${product.image}`;
+                
                 // Set the actual product image after a brief delay to show loading
                 setTimeout(() => {
-                    productImage.src = product.image;
+                    productImage.src = imagePath;
                     productImage.alt = product.name;
                 }, 100);
             } else {
@@ -956,8 +911,10 @@
             return localStorage.getItem('userEmail') || '';
         }
         
-        function getCurrentProduct() {
-            return sampleProducts.find(p => p.id === currentItemId) || { name: 'Unknown Item' };
+        function loadCurrentUser() {
+            // Initialize current user if needed
+            const user = getCurrentUser();
+            console.log('Current user loaded:', user);
         }
         
         function openRemindersPage() {
@@ -967,12 +924,12 @@
         function loadSellerInfo() {
             // Dynamic seller names based on item ID
             const sellers = {
-                '0': 'Alex Thompson',
-                '1': 'Sarah Johnson', 
-                '2': 'Mike Chen',
-                '3': 'Emily Davis',
-                '4': 'David Wilson',
-                '5': 'Lisa Garcia'
+                0: 'Alex Thompson',
+                1: 'Sarah Johnson', 
+                2: 'Mike Chen',
+                3: 'Emily Davis',
+                4: 'David Wilson',
+                5: 'Lisa Garcia'
             };
             
             const sellerName = sellers[currentItemId] || 'Seller';
@@ -1046,56 +1003,66 @@
                 setTimeout(() => {
                     let randomResponse;
                     
-                    // Check if message contains booking-related keywords
-                    if (userMessage.toLowerCase().includes('book') || userMessage.toLowerCase().includes('pickup') || userMessage.toLowerCase().includes('schedule')) {
-                        const bookingResponses = [
-                            "Great! I'm available for pickup. When works best for you? I'm free Mon-Sat 9AM-7PM.",
-                            "Perfect! Let's schedule your pickup. I can meet today after 2PM or tomorrow morning. What's your preference?",
-                            "Excellent! For pickup, I'm available weekdays after 5PM and weekends anytime. What day works for you?",
-                            "Sure thing! I can arrange pickup. My location is near downtown. When would you like to collect it?",
-                            "Absolutely! I'm flexible with pickup times. Are you available this weekend? I can meet at a convenient location.",
-                            "Of course! Let's book your pickup. I prefer daytime meetings for safety. How about tomorrow at 11AM?"
-                        ];
-                        randomResponse = bookingResponses[Math.floor(Math.random() * bookingResponses.length)];
-                    } else if (userMessage.toLowerCase().includes('available') || userMessage.toLowerCase().includes('still')) {
-                        const availabilityResponses = [
-                            "Yes, it's still available! Would you like to arrange a pickup time?",
-                            "Absolutely! The item is ready for pickup. When would you like to schedule?",
-                            "Yes, still available! I can arrange pickup as early as today if you're interested.",
-                            "It's yours if you want it! When would be a good time for pickup?",
-                            "Still available! Several people have asked, so let me know if you'd like to book pickup soon."
-                        ];
-                        randomResponse = availabilityResponses[Math.floor(Math.random() * availabilityResponses.length)];
-                    } else if (userMessage.toLowerCase().includes('location') || userMessage.toLowerCase().includes('where')) {
-                        const locationResponses = [
-                            "I'm located near [Location]. We can meet at the shopping center or I can provide my exact address once we confirm the pickup time.",
-                            "I'm in the downtown area. Would you prefer to meet at a public place like the library or coffee shop?",
-                            "My location is [Area]. I usually meet at the local mall for safety. Does that work for you?",
-                            "I'm near [Landmark]. We can arrange a safe meeting spot once you're ready to pickup."
-                        ];
-                        randomResponse = locationResponses[Math.floor(Math.random() * locationResponses.length)];
-                    } else if (userMessage.toLowerCase().includes('price') || userMessage.toLowerCase().includes('negotiate')) {
-                        const priceResponses = [
-                            "The listed price is fair, but I'm open to reasonable offers. What did you have in mind?",
-                            "Price is negotiable! Make me an offer and we can discuss during pickup.",
-                            "I'm flexible on price for serious buyers. What's your budget?",
-                            "For quick pickup, I might consider a small discount. What's your offer?"
-                        ];
-                        randomResponse = priceResponses[Math.floor(Math.random() * priceResponses.length)];
+                    // Get existing messages to check if this is the first user message
+                    const chatKey = getChatKey();
+                    const existingMessages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+                    const isFirstMessage = existingMessages.filter(msg => msg.isUser).length === 1; // Only one user message (the one just sent)
+                    
+                    // If this is the first message, start with a welcome response
+                    if (isFirstMessage) {
+                        randomResponse = `Hi! Thanks for your interest in ${currentProduct.name}. How can I help you?`;
                     } else {
-                        const generalResponses = [
-                            "Thanks for your interest! This item is in great condition.",
-                            "Yes, it's still available. Would you like more details?",
-                            "I can provide more photos if you'd like to see them.",
-                            "Feel free to ask any questions about the item!",
-                            "I can arrange a meeting for you to see it in person.",
-                            "This is one of my best items. Very well maintained!",
-                            "Let me know if you need any additional information.",
-                            "I'm available to meet this week if you're interested.",
-                            "Would you like to know more about its features?",
-                            "The item is exactly as shown in the photos."
-                        ];
-                        randomResponse = generalResponses[Math.floor(Math.random() * generalResponses.length)];
+                        // Check if message contains booking-related keywords
+                        if (userMessage.toLowerCase().includes('book') || userMessage.toLowerCase().includes('pickup') || userMessage.toLowerCase().includes('schedule')) {
+                            const bookingResponses = [
+                                "Great! I'm available for pickup. When works best for you? I'm free Mon-Sat 9AM-7PM.",
+                                "Perfect! Let's schedule your pickup. I can meet today after 2PM or tomorrow morning. What's your preference?",
+                                "Excellent! For pickup, I'm available weekdays after 5PM and weekends anytime. What day works for you?",
+                                "Sure thing! I can arrange pickup. My location is near downtown. When would you like to collect it?",
+                                "Absolutely! I'm flexible with pickup times. Are you available this weekend? I can meet at a convenient location.",
+                                "Of course! Let's book your pickup. I prefer daytime meetings for safety. How about tomorrow at 11AM?"
+                            ];
+                            randomResponse = bookingResponses[Math.floor(Math.random() * bookingResponses.length)];
+                        } else if (userMessage.toLowerCase().includes('available') || userMessage.toLowerCase().includes('still')) {
+                            const availabilityResponses = [
+                                "Yes, it's still available! Would you like to arrange a pickup time?",
+                                "Absolutely! The item is ready for pickup. When would you like to schedule?",
+                                "Yes, still available! I can arrange pickup as early as today if you're interested.",
+                                "It's yours if you want it! When would be a good time for pickup?",
+                                "Still available! Several people have asked, so let me know if you'd like to book pickup soon."
+                            ];
+                            randomResponse = availabilityResponses[Math.floor(Math.random() * availabilityResponses.length)];
+                        } else if (userMessage.toLowerCase().includes('location') || userMessage.toLowerCase().includes('where')) {
+                            const locationResponses = [
+                                "I'm located near [Location]. We can meet at the shopping center or I can provide my exact address once we confirm the pickup time.",
+                                "I'm in the downtown area. Would you prefer to meet at a public place like the library or coffee shop?",
+                                "My location is [Area]. I usually meet at the local mall for safety. Does that work for you?",
+                                "I'm near [Landmark]. We can arrange a safe meeting spot once you're ready to pickup."
+                            ];
+                            randomResponse = locationResponses[Math.floor(Math.random() * locationResponses.length)];
+                        } else if (userMessage.toLowerCase().includes('price') || userMessage.toLowerCase().includes('negotiate')) {
+                            const priceResponses = [
+                                "The listed price is fair, but I'm open to reasonable offers. What did you have in mind?",
+                                "Price is negotiable! Make me an offer and we can discuss during pickup.",
+                                "I'm flexible on price for serious buyers. What's your budget?",
+                                "For quick pickup, I might consider a small discount. What's your offer?"
+                            ];
+                            randomResponse = priceResponses[Math.floor(Math.random() * priceResponses.length)];
+                        } else {
+                            const generalResponses = [
+                                "Thanks for your interest! This item is in great condition.",
+                                "Yes, it's still available. Would you like more details?",
+                                "I can provide more photos if you'd like to see them.",
+                                "Feel free to ask any questions about the item!",
+                                "I can arrange a meeting for you to see it in person.",
+                                "This is one of my best items. Very well maintained!",
+                                "Let me know if you need any additional information.",
+                                "I'm available to meet this week if you're interested.",
+                                "Would you like to know more about its features?",
+                                "The item is exactly as shown in the photos."
+                            ];
+                            randomResponse = generalResponses[Math.floor(Math.random() * generalResponses.length)];
+                        }
                     }
                     
                     addMessage(randomResponse, false);
@@ -1131,19 +1098,7 @@
             const chatKey = getChatKey();
             const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
             
-            // If no messages exist, add welcome message
-            if (messages.length === 0) {
-                const welcomeMessage = {
-                    content: `Hi! Thanks for your interest in ${currentProduct.name}. How can I help you?`,
-                    isUser: false,
-                    timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    id: Date.now()
-                };
-                messages.push(welcomeMessage);
-                localStorage.setItem(chatKey, JSON.stringify(messages));
-            }
-            
-            // Load messages into chat
+            // Load messages into chat (no automatic welcome message)
             messages.forEach(msg => {
                 addMessage(msg.content, msg.isUser, msg.timestamp);
             });
@@ -1216,26 +1171,17 @@
 
         // Initialize the chat
         document.addEventListener('DOMContentLoaded', function() {
-            // Get item ID from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const itemId = urlParams.get('item_id');
+            // Use Flask-provided item_id directly
+            currentItemId = {{ item_id }};
+            localStorage.setItem('currentItemId', currentItemId);
             
-            if (itemId) {
-                currentItemId = parseInt(itemId);
-                localStorage.setItem('currentItemId', currentItemId);
-            } else {
-                // Try to get from localStorage if available
-                const savedItemId = localStorage.getItem('currentItemId');
-                if (savedItemId) {
-                    currentItemId = parseInt(savedItemId);
-                } else {
-                    // Default to first product if no ID specified
-                    currentItemId = 0;
-                }
-            }
+            console.log('Chat initialized for item ID:', currentItemId);
             
             // Load product information first
             currentProduct = loadProductInfo();
+            
+            // Load seller information
+            loadSellerInfo();
             
             // Initialize notification system
             updateNotificationBadge();
