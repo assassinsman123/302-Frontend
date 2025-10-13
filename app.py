@@ -35,7 +35,7 @@ products_list = [
     },
     {
         "name": "Pants", 
-        "price": 120, 
+        "price": 20, 
         "image": "images/matthew-moloney-YeGao3uk8kI-unsplash.jpg",
         "category": "Clothing",
         "condition": "New",
@@ -122,6 +122,47 @@ def forgot_password():
         return redirect(url_for('index'))
     return render_template('ForgotPassword.html')
 
+
+# Search Route
+@app.route('/search')
+def search():
+    query = request.args.get('q', '').lower().strip()
+    category = request.args.get('category', '').lower().strip()
+    min_price = request.args.get('min_price')
+    max_price = request.args.get('max_price')
+    
+    filtered_products = []
+    
+    for i, product in enumerate(products_list):
+        # Text search in name, category, condition, and features
+        if query:
+            searchable_text = f"{product['name']} {product['category']} {product['condition']} {product['features']}".lower()
+            if query not in searchable_text:
+                continue
+        
+        # Category filter
+        if category and category != product['category'].lower():
+            continue
+        
+        # Price range filter
+        if min_price and product['price'] < float(min_price):
+            continue
+        if max_price and product['price'] > float(max_price):
+            continue
+        
+        # Add item_id for frontend use
+        product_with_id = product.copy()
+        product_with_id['item_id'] = i
+        filtered_products.append(product_with_id)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': True,
+            'products': filtered_products,
+            'count': len(filtered_products)
+        })
+    
+    return render_template('Products.html', products=filtered_products)
 
 # Products Page
 @app.route('/products')

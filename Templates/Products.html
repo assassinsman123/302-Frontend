@@ -5,18 +5,145 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marketplace</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      padding: 8px 15px;
+      border-radius: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .search-container:focus-within {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      transform: translateY(-1px);
+    }
+    
+    .search-container input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      width: 200px;
+      padding: 5px;
+    }
+    
+    .search-icon {
+      color: #666;
+      font-size: 16px;
+    }
+    
+    .clear-search {
+      color: #999;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 5px;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+    
+    .clear-search:hover {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .search-results-info {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    
+    .no-results-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    
+    .filter-bar {
+      background: white;
+      padding: 15px 20px;
+      margin: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: none;
+    }
+    
+    .filter-bar.active {
+      display: block;
+    }
+    
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-group label {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+    
+    .filter-group select,
+    .filter-group input {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .filter-toggle {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      color: #495057;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .filter-toggle:hover,
+    .filter-toggle.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      font-size: 20px;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
   <nav class="navbar">
     <div class="nav-left">
       <h2>Marketplace</h2>
-      <!-- Search Bar -->
-      <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search products..." onkeyup="searchProducts()">
+      <!-- Enhanced Search Bar -->
+      <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search products, categories, features..." onkeyup="performSearch()">
+        <span class="clear-search" id="clearSearch" onclick="clearSearch()" style="display: none;">✕</span>
       </div>
+      <!-- Filter Toggle -->
+      <button class="filter-toggle" id="filterToggle" onclick="toggleFilters()">🔧 Filters</button>
       <!-- Sell Button -->
-      <a href="{{ url_for('upload') }}" class="btn">Sell</a> <!-- Updated to navigate to the upload page -->
+      <a href="{{ url_for('upload') }}" class="btn">Sell</a>
       <button class="btn active">Categories</button>
     </div>
     
@@ -30,22 +157,75 @@
       </div>
     </div>
   </nav>
+  
+  <!-- Advanced Filters -->
+  <div class="filter-bar" id="filterBar">
+    <div class="filter-group">
+      <label>Category:</label>
+      <select id="categoryFilter" onchange="performSearch()">
+        <option value="">All Categories</option>
+        <option value="electronics">Electronics</option>
+        <option value="clothing">Clothing</option>
+        <option value="fashion">Fashion</option>
+        <option value="books">Books</option>
+        <option value="home">Home & Garden</option>
+      </select>
+      
+      <label>Price Range:</label>
+      <input type="number" id="minPrice" placeholder="Min $" onchange="performSearch()">
+      <span>-</span>
+      <input type="number" id="maxPrice" placeholder="Max $" onchange="performSearch()">
+      
+      <button onclick="clearFilters()" style="margin-left: 10px; padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">Clear</button>
+    </div>
+  </div>
+  
+  <!-- Search Results Info -->
+  <div class="search-results-info" id="searchInfo" style="display: none;"></div>
+  
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" id="loadingSpinner">🔄 Searching...</div>
+  
   <!-- Products Grid -->
-  <div class="products">
+  <div class="products" id="productsContainer">
     {% for product in products %}
-    <div class="product">
+    <div class="product" data-name="{{ product.name.lower() }}" data-category="{{ product.category.lower() }}" data-price="{{ product.price }}" data-features="{{ product.features.lower() }}">
       <a href="{{ url_for('message_seller', item_id=loop.index0) }}" class="product-image-link">
         <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
       </a>
       <div class="product-info">
         <p class="product-name">{{ product.name }}</p>
-        <p class="product-price">${{ product.price }}</p> <!-- Added $ before product.price -->
+        <p class="product-price">${{ product.price }}</p>
       </div>
     </div>
     {% endfor %}
   </div>
+  
+  <!-- No Results Message -->
+  <div class="no-results" id="noResults" style="display: none;">
+    <div class="no-results-icon">🔍</div>
+    <h3>No products found</h3>
+    <p>Try adjusting your search terms or filters</p>
+    <button onclick="clearSearch()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px;">Clear Search</button>
+  </div>
 
   <script>
+    let searchTimeout;
+    let allProducts = [];
+    
+    // Store original products on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const productElements = document.querySelectorAll('.product');
+      allProducts = Array.from(productElements).map((element, index) => ({
+        element: element,
+        name: element.dataset.name,
+        category: element.dataset.category,
+        price: parseFloat(element.dataset.price),
+        features: element.dataset.features,
+        index: index
+      }));
+    });
+    
     function toggleLogout() {
       const logoutText = document.getElementById('logoutText');
       const isVisible = logoutText.style.display !== 'none';
@@ -61,30 +241,157 @@
       window.location.href = "{{ url_for('logout') }}";
     }
     
-    function searchProducts() {
-      const searchInput = document.getElementById('searchInput');
-      const searchTerm = searchInput.value.toLowerCase();
-      const products = document.querySelectorAll('.product');
+    function toggleFilters() {
+      const filterBar = document.getElementById('filterBar');
+      const filterToggle = document.getElementById('filterToggle');
       
-      products.forEach(product => {
-        const productName = product.querySelector('.product-name').textContent.toLowerCase();
-        const productPrice = product.querySelector('.product-price').textContent.toLowerCase();
-        
-        // Check if search term matches product name or price
-        if (productName.includes(searchTerm) || productPrice.includes(searchTerm)) {
-          product.style.display = 'flex'; // Show the product
-        } else {
-          product.style.display = 'none'; // Hide the product
-        }
-      });
+      filterBar.classList.toggle('active');
+      filterToggle.classList.toggle('active');
       
-      // If search is empty, show all products
-      if (searchTerm === '') {
-        products.forEach(product => {
-          product.style.display = 'flex';
-        });
+      if (filterBar.classList.contains('active')) {
+        filterToggle.textContent = '🔧 Hide Filters';
+      } else {
+        filterToggle.textContent = '🔧 Filters';
       }
     }
+    
+    function performSearch() {
+      // Clear previous timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+      
+      // Debounce search for better performance
+      searchTimeout = setTimeout(() => {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+        const category = document.getElementById('categoryFilter').value.toLowerCase();
+        const minPrice = document.getElementById('minPrice').value;
+        const maxPrice = document.getElementById('maxPrice').value;
+        
+        // Show/hide clear button
+        const clearBtn = document.getElementById('clearSearch');
+        clearBtn.style.display = searchTerm ? 'inline' : 'none';
+        
+        // Filter products
+        let filteredProducts = allProducts.filter(product => {
+          // Text search
+          if (searchTerm) {
+            const searchableText = `${product.name} ${product.category} ${product.features}`;
+            if (!searchableText.includes(searchTerm)) {
+              return false;
+            }
+          }
+          
+          // Category filter
+          if (category && category !== product.category) {
+            return false;
+          }
+          
+          // Price range filter
+          if (minPrice && product.price < parseFloat(minPrice)) {
+            return false;
+          }
+          if (maxPrice && product.price > parseFloat(maxPrice)) {
+            return false;
+          }
+          
+          return true;
+        });
+        
+        // Update display
+        updateProductDisplay(filteredProducts, searchTerm, category, minPrice, maxPrice);
+        
+      }, 300); // 300ms delay for better UX
+    }
+    
+    function updateProductDisplay(filteredProducts, searchTerm, category, minPrice, maxPrice) {
+      const container = document.getElementById('productsContainer');
+      const noResults = document.getElementById('noResults');
+      const searchInfo = document.getElementById('searchInfo');
+      
+      // Hide all products first
+      allProducts.forEach(product => {
+        product.element.style.display = 'none';
+      });
+      
+      // Show filtered products
+      filteredProducts.forEach(product => {
+        product.element.style.display = 'flex';
+      });
+      
+      // Update search info
+      let searchInfoText = '';
+      if (searchTerm || category || minPrice || maxPrice) {
+        const totalProducts = allProducts.length;
+        const foundProducts = filteredProducts.length;
+        
+        searchInfoText = `Showing ${foundProducts} of ${totalProducts} products`;
+        
+        if (searchTerm) searchInfoText += ` for "${searchTerm}"`;
+        if (category) searchInfoText += ` in ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+        if (minPrice || maxPrice) {
+          searchInfoText += ` ($${minPrice || '0'} - $${maxPrice || '∞'})`;
+        }
+        
+        searchInfo.textContent = searchInfoText;
+        searchInfo.style.display = 'block';
+      } else {
+        searchInfo.style.display = 'none';
+      }
+      
+      // Show/hide no results message
+      if (filteredProducts.length === 0 && (searchTerm || category || minPrice || maxPrice)) {
+        noResults.style.display = 'block';
+        container.style.display = 'none';
+      } else {
+        noResults.style.display = 'none';
+        container.style.display = 'grid';
+      }
+    }
+    
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('categoryFilter').value = '';
+      document.getElementById('minPrice').value = '';
+      document.getElementById('maxPrice').value = '';
+      document.getElementById('clearSearch').style.display = 'none';
+      
+      // Show all products
+      allProducts.forEach(product => {
+        product.element.style.display = 'flex';
+      });
+      
+      // Hide search info and no results
+      document.getElementById('searchInfo').style.display = 'none';
+      document.getElementById('noResults').style.display = 'none';
+      document.getElementById('productsContainer').style.display = 'grid';
+    }
+    
+    function clearFilters() {
+      document.getElementById('categoryFilter').value = '';
+      document.getElementById('minPrice').value = '';
+      document.getElementById('maxPrice').value = '';
+      performSearch();
+    }
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      // Focus search on Ctrl+F or Cmd+F
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+      
+      // Clear search on Escape
+      if (e.key === 'Escape') {
+        clearSearch();
+      }
+    });
+    
+    // Auto-focus search input
+    document.getElementById('searchInput').addEventListener('focus', function() {
+      this.select(); // Select all text when focused
+    });
   </script>
 </body>
 </html>

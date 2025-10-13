@@ -6,6 +6,455 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Reminders & Notifications</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* Modern Reminder Page Styles */
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+    
+    .navbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        padding: 15px 30px;
+    }
+    
+    .navbar h2 {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin: 0;
+    }
+    
+    .user-icon {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 50%;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .user-icon:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .reminder-container {
+        max-width: 1200px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
+    
+    .reminder-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+        padding: 40px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .reminder-header h1 {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        font-weight: 800;
+        text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .reminder-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        line-height: 1.6;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .booking-form-section {
+        background: white;
+        border-radius: 20px;
+        padding: 35px;
+        margin-bottom: 30px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .booking-form-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+    }
+    
+    .booking-form-section h2 {
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.95rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 15px 20px;
+        border: 2px solid #e8ecf3;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: #f8f9fb;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+    }
+    
+    .alert-actions {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 25px 0;
+    }
+    
+    .alert-actions h4 {
+        margin: 0 0 15px 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .alert-actions button {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .alert-actions button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2) !important;
+        color: white !important;
+        border: none !important;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 24px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268 !important;
+        transform: translateY(-2px);
+    }
+    
+    .booking-alert-status,
+    .notification-settings-section,
+    .active-reminders-section,
+    .recent-notifications-section {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border: none;
+    }
+    
+    .booking-alert-status h2,
+    .notification-settings-section h2,
+    .active-reminders-section h2,
+    .recent-notifications-section h2 {
+        color: #2c3e50;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #e8ecf3;
+    }
+    
+    .setting-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px;
+        margin-bottom: 15px;
+        background: #f8f9fb;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .setting-item:hover {
+        background: #f0f2f8;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .setting-info strong {
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: block;
+    }
+    
+    .setting-info p {
+        color: #7f8c8d;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+    
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #ccc;
+        transition: 0.4s;
+        border-radius: 30px;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background: white;
+        transition: 0.4s;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    input:checked + .slider {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(30px);
+    }
+    
+    .no-alerts,
+    .no-reminders,
+    .no-notifications,
+    .no-bookings {
+        text-align: center;
+        padding: 50px 20px;
+        color: #7f8c8d;
+        background: #f8f9fb;
+        border-radius: 15px;
+        border: 2px dashed #e8ecf3;
+    }
+    
+    .no-alerts span,
+    .no-reminders span,
+    .no-notifications span,
+    .no-bookings span {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 15px;
+        opacity: 0.6;
+    }
+    
+    .action-buttons {
+        text-align: center;
+        padding: 30px;
+        margin-top: 40px;
+    }
+    
+    .action-buttons button {
+        margin: 0 10px 10px 0;
+    }
+    
+    .notification-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    }
+    
+    .notification-content {
+        background: white;
+        padding: 25px 35px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        max-width: 400px;
+        animation: slideIn 0.4s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .notification-icon {
+        font-size: 2rem;
+    }
+    
+    .notification-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        flex: 1;
+    }
+    
+    .close-notification {
+        cursor: pointer;
+        font-size: 1.2rem;
+        color: #7f8c8d;
+        transition: color 0.3s ease;
+    }
+    
+    .close-notification:hover {
+        color: #e74c3c;
+    }
+    
+    .recent-bookings {
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 2px solid #e8ecf3;
+    }
+    
+    .recent-bookings h3 {
+        color: #2c3e50;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .reminder-container {
+            padding: 0 15px;
+        }
+        
+        .reminder-header {
+            padding: 25px 15px;
+        }
+        
+        .reminder-header h1 {
+            font-size: 2rem;
+        }
+        
+        .booking-form-section,
+        .booking-alert-status,
+        .notification-settings-section,
+        .active-reminders-section,
+        .recent-notifications-section {
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .navbar {
+            padding: 10px 15px;
+        }
+    }
+  </style>
 </head>
 <body>
     <!--Navbar-->
@@ -952,10 +1401,14 @@
         }
         
         function removeBookingAlert(itemId) {
-            if (confirm('Are you sure you want to disable booking alerts for this item?')) {
-                let bookingAlerts = JSON.parse(localStorage.getItem('bookingAlerts') || '[]');
-                bookingAlerts = bookingAlerts.filter(alert => alert.itemId !== itemId);
-                localStorage.setItem('bookingAlerts', JSON.stringify(bookingAlerts));
+            // Get alert details before removing
+            const bookingAlerts = JSON.parse(localStorage.getItem('bookingAlerts') || '[]');
+            const alertToRemove = bookingAlerts.find(alert => alert.itemId === itemId);
+            const itemName = alertToRemove ? alertToRemove.itemName : 'this item';
+            
+            if (confirm(`Are you sure you want to disable booking alerts for "${itemName}"?`)) {
+                let updatedAlerts = bookingAlerts.filter(alert => alert.itemId !== itemId);
+                localStorage.setItem('bookingAlerts', JSON.stringify(updatedAlerts));
                 
                 // Update display
                 updateBookingAlertsDisplay();
@@ -969,12 +1422,219 @@
                     },
                     body: JSON.stringify({ item_id: itemId })
                 })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show detailed popup notification
+                        showAlertDisabledPopup(alertToRemove);
+                    }
+                })
                 .catch(error => {
                     console.error('Error removing booking alert:', error);
+                    // Still show popup even if server request fails
+                    showAlertDisabledPopup(alertToRemove);
                 });
-                
-                showNotification('🔕 Booking alert removed', '✅');
             }
+        }
+        
+        function showAlertDisabledPopup(alertData) {
+            // Create popup overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'alertDisabledOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                backdrop-filter: blur(5px);
+                animation: fadeIn 0.3s ease-out;
+            `;
+            
+            // Create popup content
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                background: white;
+                padding: 40px;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                max-width: 500px;
+                width: 90%;
+                text-align: center;
+                animation: slideIn 0.4s ease-out;
+                position: relative;
+            `;
+            
+            const itemName = alertData ? alertData.itemName : 'Unknown Item';
+            const email = alertData ? alertData.email : '';
+            const dateCreated = alertData ? new Date(alertData.dateCreated).toLocaleDateString() : '';
+            
+            popup.innerHTML = `
+                <div style="font-size: 4rem; margin-bottom: 20px;">🔕</div>
+                <h2 style="color: #e74c3c; margin-bottom: 15px; font-size: 1.8rem; font-weight: 700;">
+                    Booking Alert Disabled
+                </h2>
+                <div style="background: #fff5f5; border: 2px solid #fed7d7; border-radius: 15px; padding: 25px; margin: 25px 0; text-align: left;">
+                    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">📦</span>
+                        <div>
+                            <strong style="color: #2d3748; display: block;">Item:</strong> 
+                            <span style="color: #4a5568; font-size: 1.1rem;">${itemName}</span>
+                        </div>
+                    </div>
+                    ${email ? `
+                    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">📧</span>
+                        <div>
+                            <strong style="color: #2d3748; display: block;">Email:</strong> 
+                            <span style="color: #4a5568; font-size: 1.1rem;">${email}</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${dateCreated ? `
+                    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">📅</span>
+                        <div>
+                            <strong style="color: #2d3748; display: block;">Alert Created:</strong> 
+                            <span style="color: #4a5568; font-size: 1.1rem;">${dateCreated}</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">🕒</span>
+                        <div>
+                            <strong style="color: #2d3748; display: block;">Disabled:</strong> 
+                            <span style="color: #4a5568; font-size: 1.1rem;">${new Date().toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%); color: white; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                    <div style="font-size: 1.5rem; margin-bottom: 8px;">✨</div>
+                    <p style="margin: 0; line-height: 1.6; font-weight: 500;">
+                        You will no longer receive email notifications when someone books this item for pickup.
+                    </p>
+                </div>
+                <p style="color: #718096; margin: 20px 0; line-height: 1.6; font-size: 0.95rem;">
+                    Want to stay updated? You can re-enable alerts anytime by visiting the item page and clicking the notification bell 🔔
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px; flex-wrap: wrap;">
+                    <button onclick="closeAlertDisabledPopup()" style="
+                        background: linear-gradient(45deg, #667eea, #764ba2);
+                        color: white;
+                        border: none;
+                        padding: 15px 30px;
+                        border-radius: 25px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-size: 16px;
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                    ">
+                        ✅ Got It
+                    </button>
+                    <button onclick="goToProducts()" style="
+                        background: #6c757d;
+                        color: white;
+                        border: none;
+                        padding: 15px 30px;
+                        border-radius: 25px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-size: 16px;
+                        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+                    ">
+                        🛍️ Browse Products
+                    </button>
+                </div>
+            `;
+            
+            overlay.appendChild(popup);
+            document.body.appendChild(overlay);
+            
+            // Add animation styles
+            if (!document.getElementById('popupAnimationStyles')) {
+                const style = document.createElement('style');
+                style.id = 'popupAnimationStyles';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideIn {
+                        from { 
+                            opacity: 0; 
+                            transform: translateY(-30px) scale(0.9); 
+                        }
+                        to { 
+                            opacity: 1; 
+                            transform: translateY(0) scale(1); 
+                        }
+                    }
+                    @keyframes fadeOut {
+                        from { opacity: 1; }
+                        to { opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Add button hover effects
+            const buttons = popup.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.transform = 'translateY(-3px)';
+                    btn.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.3)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'translateY(0)';
+                    btn.style.boxShadow = btn.textContent.includes('Got') ? 
+                        '0 4px 15px rgba(102, 126, 234, 0.3)' : 
+                        '0 4px 15px rgba(108, 117, 125, 0.3)';
+                });
+            });
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeAlertDisabledPopup();
+                }
+            });
+            
+            // Close on Escape key
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeAlertDisabledPopup();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
+            
+            // Auto-close after 10 seconds
+            setTimeout(() => {
+                if (document.getElementById('alertDisabledOverlay')) {
+                    closeAlertDisabledPopup();
+                }
+            }, 10000);
+        }
+        
+        function closeAlertDisabledPopup() {
+            const overlay = document.getElementById('alertDisabledOverlay');
+            if (overlay) {
+                overlay.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => {
+                    overlay.remove();
+                }, 300);
+            }
+        }
+        
+        function goToProducts() {
+            window.location.href = '/products';
         }
         
         function addRecentBooking(bookingData) {
