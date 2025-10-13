@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import datetime
 
@@ -7,6 +8,12 @@ app.secret_key = "your_secret_key"  # Change this in production
 
 # Configure Flask for UTF-8 encoding
 app.config['JSON_AS_ASCII'] = False
+
+# Helper function to ensure user session exists
+def ensure_user_session():
+    if "user" not in session:
+        session['user'] = f"user_{int(time.time())}"
+    return session['user']
 
 # Global list to store all products (default + uploaded)
 products_list = [
@@ -270,16 +277,14 @@ def review():
 
 @app.route('/item/<int:item_id>/message', methods=['GET', 'POST'])
 def message_seller(item_id):
-    if "user" not in session:
-        flash("Please log in to send a message.", "warning")
-        return redirect(url_for("index"))
+    # Ensure user session exists
+    user = ensure_user_session()
     
     # Find the product by index (item_id)
     if 0 <= item_id < len(products_list):
         item = products_list[item_id]
         
         # Check if item is in user's wishlist
-        user = session['user']
         is_in_wishlist = False
         if user in user_wishlists and item_id in user_wishlists[user]:
             is_in_wishlist = True
@@ -449,9 +454,8 @@ def toggle_wishlist(item_id):
 # Chat with Seller Route
 @app.route('/chat/<int:item_id>')
 def chat_with_seller(item_id):
-    if "user" not in session:
-        flash("Please log in to chat with seller.", "warning")
-        return redirect(url_for("index"))
+    # Ensure user session exists
+    user = ensure_user_session()
     
     # Find the product by index (item_id)
     if 0 <= item_id < len(products_list):

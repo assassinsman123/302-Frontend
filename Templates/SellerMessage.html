@@ -10,7 +10,6 @@
     <!--Navbar-->
     <nav class="navbar">
         <div class="nav-left">
-            <button onclick="history.back()" class="back-btn" title="Go Back">←</button>
             <h2>Chat with Seller</h2>
         </div>
         
@@ -137,11 +136,15 @@
                     <p class="category" id="productCategory">Category</p>
                 </div>
             </div>
-            <div class="seller-info">
+            <div class="seller-info clickable-seller-card" onclick="showSellerProfile()" title="Click to view seller profile and reviews">
                 <div class="seller-avatar">👨‍💼</div>
                 <div class="seller-details">
-                    <h4 class="clickable-seller" id="sellerNameHeader" onclick="showSellerProfile()" title="View seller profile"></h4>
+                    <h4 id="sellerNameHeader"></h4>
                     <span class="online-status">● Online</span>
+                    <div class="view-profile-hint">
+                        <span class="hint-icon">👁️</span>
+                        <span class="hint-text">Click to view profile & reviews</span>
+                    </div>
                 </div>
             </div>
         </div>
