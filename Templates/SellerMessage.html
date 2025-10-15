@@ -151,6 +151,12 @@
 
         <!--Chat Messages Area-->
         <div class="chat-messages" id="chatMessages">
+            <!-- Chat history header will be added here -->
+            <div class="chat-history-header" id="chatHistoryHeader" style="display: none;">
+                <div class="history-divider">
+                    <span class="history-text">Conversation started on <span id="conversationDate"></span></span>
+                </div>
+            </div>
             <!-- Messages will be loaded dynamically -->
         </div>
 
@@ -957,24 +963,31 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Add message to chat
-        function addMessage(content, isUser = true, timestamp = null) {
+        // Add message to chat with enhanced metadata
+        function addMessage(content, isUser = true, timestamp = null, messageId = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user-message' : 'seller-message'}`;
             
             const currentTime = timestamp || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const msgId = messageId || Date.now() + Math.random();
             
+            messageDiv.setAttribute('data-message-id', msgId);
             messageDiv.innerHTML = `
                 <div class="message-content">
                     <div class="message-bubble">
                         <p>${content}</p>
-                        <span class="message-time">${currentTime}</span>
+                        <div class="message-meta">
+                            <span class="message-time">${currentTime}</span>
+                            ${isUser ? '<span class="message-status" title="Sent">✓</span>' : ''}
+                        </div>
                     </div>
                 </div>
             `;
             
             chatMessages.appendChild(messageDiv);
             scrollToBottom();
+            
+            return msgId;
         }
 
         // Handle form submission
@@ -984,12 +997,12 @@
             const message = messageInput.value.trim();
             if (message) {
                 // Add user message immediately
-                addMessage(message, true);
+                const messageId = addMessage(message, true);
                 const userMessage = message;
                 messageInput.value = '';
                 
                 // Save message to localStorage
-                saveMessageToStorage(userMessage, true);
+                saveMessageToStorage(userMessage, true, messageId);
                 
                 // Show sending indicator briefly
                 const sendingIndicator = addTypingIndicator('Sending...');
@@ -1065,10 +1078,10 @@
                         }
                     }
                     
-                    addMessage(randomResponse, false);
+                    const responseId = addMessage(randomResponse, false);
                     
                     // Save seller response to localStorage
-                    saveMessageToStorage(randomResponse, false);
+                    saveMessageToStorage(randomResponse, false, responseId);
                 }, 1500 + Math.random() * 2500);
             }
         });
@@ -1078,30 +1091,144 @@
             return `chat_messages_user_${currentUser}_item_${currentProduct.id}`;
         }
 
-        function saveMessageToStorage(message, isUser) {
+        function saveMessageToStorage(message, isUser, messageId = null) {
             const chatKey = getChatKey();
             let messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
             
             const messageObj = {
+                id: messageId || Date.now() + Math.random(),
                 content: message,
                 isUser: isUser,
                 timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                id: Date.now() + Math.random()
+                fullTimestamp: new Date().toISOString(),
+                date: new Date().toDateString()
             };
             
             messages.push(messageObj);
+            
+            // Keep only last 100 messages to prevent storage bloat
+            if (messages.length > 100) {
+                messages = messages.slice(-100);
+            }
+            
             localStorage.setItem(chatKey, JSON.stringify(messages));
+            
+            // Update conversation start date
+            updateConversationStartDate(messages);
         }
 
-        // Load messages from localStorage
+        // Load messages from localStorage with enhanced display
         function loadMessagesFromStorage() {
             const chatKey = getChatKey();
             const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
             
-            // Load messages into chat (no automatic welcome message)
+            if (messages.length > 0) {
+                // Show loading indicator for large chat histories
+                if (messages.length > 10) {
+                    showChatLoadingIndicator();
+                }
+                
+                // Show conversation start date
+                updateConversationStartDate(messages);
+                
+                // Group messages by date if conversation spans multiple days
+                const messagesByDate = groupMessagesByDate(messages);
+                
+                // Load messages with slight delay for better UX
+                let loadDelay = 0;
+                Object.keys(messagesByDate).forEach((date, dateIndex) => {
+                    setTimeout(() => {
+                        // Add date separator if needed
+                        if (Object.keys(messagesByDate).length > 1) {
+                            addDateSeparator(date);
+                        }
+                        
+                        // Add messages for this date
+                        messagesByDate[date].forEach((msg, msgIndex) => {
+                            setTimeout(() => {
+                                addMessage(msg.content, msg.isUser, msg.timestamp, msg.id);
+                            }, msgIndex * 50); // Small delay between messages for smooth loading
+                        });
+                    }, loadDelay);
+                    
+                    loadDelay += messagesByDate[date].length * 50 + 200; // Delay between dates
+                });
+                
+                // Hide loading indicator after messages are loaded
+                if (messages.length > 10) {
+                    setTimeout(() => {
+                        hideChatLoadingIndicator();
+                    }, loadDelay + 500);
+                }
+            }
+        }
+        
+        function showChatLoadingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'chatLoadingIndicator';
+            indicator.className = 'chat-loading-indicator';
+            indicator.innerHTML = `
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <span class="loading-text">Restoring chat history...</span>
+                </div>
+            `;
+            chatMessages.appendChild(indicator);
+        }
+        
+        function hideChatLoadingIndicator() {
+            const indicator = document.getElementById('chatLoadingIndicator');
+            if (indicator) {
+                indicator.style.transition = 'opacity 0.3s ease';
+                indicator.style.opacity = '0';
+                setTimeout(() => {
+                    if (indicator.parentNode) {
+                        indicator.remove();
+                    }
+                }, 300);
+            }
+        }
+        
+        function updateConversationStartDate(messages) {
+            if (messages.length > 0) {
+                const firstMessage = messages[0];
+                const startDate = firstMessage.fullTimestamp ? 
+                    new Date(firstMessage.fullTimestamp).toLocaleDateString() : 
+                    new Date().toLocaleDateString();
+                    
+                const header = document.getElementById('chatHistoryHeader');
+                const dateSpan = document.getElementById('conversationDate');
+                
+                if (header && dateSpan) {
+                    dateSpan.textContent = startDate;
+                    header.style.display = 'block';
+                }
+            }
+        }
+        
+        function groupMessagesByDate(messages) {
+            const grouped = {};
+            
             messages.forEach(msg => {
-                addMessage(msg.content, msg.isUser, msg.timestamp);
+                const date = msg.date || new Date().toDateString();
+                if (!grouped[date]) {
+                    grouped[date] = [];
+                }
+                grouped[date].push(msg);
             });
+            
+            return grouped;
+        }
+        
+        function addDateSeparator(date) {
+            const separator = document.createElement('div');
+            separator.className = 'date-separator';
+            separator.innerHTML = `
+                <div class="date-line">
+                    <span class="date-text">${date}</span>
+                </div>
+            `;
+            chatMessages.appendChild(separator);
         }
 
         // Add typing indicator function
@@ -1121,21 +1248,142 @@
             return indicatorDiv;
         }
 
-        // Clear chat function (for demo purposes)
+        // Clear chat function with confirmation
         function clearChat() {
+            if (confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
+                const chatKey = getChatKey();
+                localStorage.removeItem(chatKey);
+                chatMessages.innerHTML = '';
+                
+                // Hide history header
+                const header = document.getElementById('chatHistoryHeader');
+                if (header) header.style.display = 'none';
+                
+                // Show confirmation
+                addSystemMessage('Chat history cleared');
+            }
+        }
+        
+        // Show welcome back message for returning users
+        function showWelcomeBackMessage(messages) {
+            const lastMessage = messages[messages.length - 1];
+            const lastMessageTime = lastMessage.fullTimestamp ? new Date(lastMessage.fullTimestamp) : new Date();
+            const timeDiff = new Date() - lastMessageTime;
+            const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+            
+            // Only show welcome back if it's been more than 1 hour
+            if (hoursDiff >= 1) {
+                let welcomeText;
+                if (hoursDiff < 24) {
+                    welcomeText = `Welcome back! Your conversation was last active ${hoursDiff} hour${hoursDiff > 1 ? 's' : ''} ago.`;
+                } else {
+                    const daysDiff = Math.floor(hoursDiff / 24);
+                    welcomeText = `Welcome back! Your conversation was last active ${daysDiff} day${daysDiff > 1 ? 's' : ''} ago.`;
+                }
+                
+                // Add system message after a brief delay
+                setTimeout(() => {
+                    addSystemMessage(welcomeText);
+                }, 1000);
+            }
+            
+            console.log(`Chat reopened. Found ${messages.length} previous messages.`);
+        }
+        
+        // Show message for first time users
+        function showFirstTimeMessage() {
+            console.log('First time opening chat for this item.');
+            
+            // Add a subtle hint about starting the conversation
+            setTimeout(() => {
+                addSystemMessage('Start the conversation by sending a message to the seller');
+            }, 2000);
+        }
+        
+        // Enhanced system message with auto-hide
+        function addSystemMessage(content, autoHide = true) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system-message';
+            messageDiv.innerHTML = `
+                <div class="system-content">
+                    <span class="system-text">${content}</span>
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+            
+            // Auto-hide system messages after 5 seconds
+            if (autoHide) {
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.style.transition = 'opacity 0.5s ease';
+                        messageDiv.style.opacity = '0';
+                        setTimeout(() => {
+                            if (messageDiv.parentNode) {
+                                messageDiv.remove();
+                            }
+                        }, 500);
+                    }
+                }, 5000);
+            }
+        }
+        
+        // Export chat history (for user backup)
+        function exportChatHistory() {
             const chatKey = getChatKey();
-            localStorage.removeItem(chatKey);
-            chatMessages.innerHTML = '';
-            loadMessagesFromStorage();
+            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            
+            if (messages.length === 0) {
+                alert('No chat history to export.');
+                return;
+            }
+            
+            const productName = currentProduct ? currentProduct.name : 'Unknown Item';
+            const exportData = {
+                product: productName,
+                itemId: currentItemId,
+                exportDate: new Date().toISOString(),
+                messages: messages
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `chat-history-${productName.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+        
+        // Get chat statistics
+        function getChatStats() {
+            const chatKey = getChatKey();
+            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            
+            const userMessages = messages.filter(m => m.isUser);
+            const sellerMessages = messages.filter(m => !m.isUser);
+            
+            return {
+                totalMessages: messages.length,
+                userMessages: userMessages.length,
+                sellerMessages: sellerMessages.length,
+                conversationStarted: messages.length > 0 ? messages[0].fullTimestamp : null,
+                lastActivity: messages.length > 0 ? messages[messages.length - 1].fullTimestamp : null
+            };
         }
 
-        // Add keyboard shortcut for clearing chat (Ctrl + K)
+        // Add keyboard shortcuts for chat management
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'k') {
                 e.preventDefault();
-                if (confirm('Clear all messages?')) {
-                    clearChat();
-                }
+                clearChat();
+            } else if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                exportChatHistory();
+            } else if (e.ctrlKey && e.key === 'i') {
+                e.preventDefault();
+                const stats = getChatStats();
+                alert(`Chat Statistics:\nTotal Messages: ${stats.totalMessages}\nYour Messages: ${stats.userMessages}\nSeller Messages: ${stats.sellerMessages}`);
             }
         });
 
@@ -1189,11 +1437,23 @@
             // Load current user information
             loadCurrentUser();
             
-            // Auto-focus input
-            messageInput.focus();
+            // Check for existing chat history before loading
+            const chatKey = getChatKey();
+            const existingMessages = JSON.parse(localStorage.getItem(chatKey) || '[]');
             
             // Load existing messages from localStorage
             loadMessagesFromStorage();
+            
+            // If there are existing messages, show a welcome back message
+            if (existingMessages.length > 0) {
+                showWelcomeBackMessage(existingMessages);
+            } else {
+                // First time opening this chat - show empty state
+                showFirstTimeMessage();
+            }
+            
+            // Auto-focus input
+            messageInput.focus();
             
             // Initial scroll to bottom
             scrollToBottom();
@@ -1217,6 +1477,39 @@
             messageInput.value = locationMessage;
             messageInput.focus();
         }
+        
+        // Handle page visibility changes (when user switches tabs or returns)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // User returned to the chat tab
+                console.log('User returned to chat');
+                
+                // Refresh notification badge
+                updateNotificationBadge();
+                
+                // Check for new messages (in a real app, this would sync with server)
+                const chatKey = getChatKey();
+                const currentMessages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+                
+                // Auto-scroll to bottom if user was at bottom before
+                const chatContainer = document.getElementById('chatMessages');
+                const isAtBottom = chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight - 50;
+                
+                if (isAtBottom) {
+                    setTimeout(scrollToBottom, 100);
+                }
+            }
+        });
+        
+        // Store last activity timestamp
+        function updateLastActivity() {
+            localStorage.setItem('lastChatActivity', new Date().toISOString());
+        }
+        
+        // Update activity on user interactions
+        messageInput.addEventListener('focus', updateLastActivity);
+        messageInput.addEventListener('input', updateLastActivity);
+        document.addEventListener('click', updateLastActivity);
     </script>
 </body>
 </html>
