@@ -1,9 +1,10 @@
 import os
 import time
+import hashlib
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='Templates')
 app.secret_key = "your_secret_key"  # Change this in production
 
 # Configure Flask for UTF-8 encoding
@@ -14,6 +15,10 @@ def ensure_user_session():
     if "user" not in session:
         session['user'] = f"user_{int(time.time())}"
     return session['user']
+
+# Global dictionary to store password reset tokens
+# Format: {token: {"email": "user@email.com", "timestamp": timestamp}}
+reset_tokens = {}
 
 # Global list to store all products (default + uploaded)
 products_list = [
@@ -117,10 +122,56 @@ def index():
 def forgot_password():
     if request.method == 'POST':
         email = request.form['email']
-        # Add logic to handle password reset (e.g., send an email)
-        flash("If this email exists, a password reset link has been sent.", "info")
+        # Generate a URL-safe reset token using hash
+        token_string = f"{email}_{int(time.time())}"
+        token = hashlib.sha256(token_string.encode()).hexdigest()
+        reset_tokens[token] = {
+            "email": email,
+            "timestamp": time.time()
+        }
+        # In a real app, send email with reset link
+        # For now, we'll just display the link in the flash message for testing
+        reset_link = url_for('reset_password', token=token, _external=True)
+        flash(f"Password reset link (for testing): {reset_link}", "info")
         return redirect(url_for('index'))
     return render_template('ForgotPassword.html')
+
+
+# Reset Password Route
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    # Check if token exists and is valid
+    if token not in reset_tokens:
+        flash("Invalid or expired reset link.", "danger")
+        return redirect(url_for('index'))
+    
+    token_data = reset_tokens[token]
+    
+    # Check if token is expired (24 hours = 86400 seconds)
+    if time.time() - token_data['timestamp'] > 86400:
+        flash("Reset link has expired. Please request a new one.", "danger")
+        del reset_tokens[token]
+        return redirect(url_for('forgot_password'))
+    
+    if request.method == 'POST':
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+        
+        if new_password != confirm_password:
+            flash("Passwords do not match!", "danger")
+            return redirect(url_for('reset_password', token=token))
+        
+        # In a real app, update the password in the database
+        # For now, just simulate success
+        email = token_data['email']
+        flash(f"Password successfully reset for {email}! Please log in with your new password.", "success")
+        
+        # Remove the used token
+        del reset_tokens[token]
+        
+        return redirect(url_for('index'))
+    
+    return render_template('ResetPassword.html')
 
 
 # Search Route
