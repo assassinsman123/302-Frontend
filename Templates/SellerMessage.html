@@ -177,6 +177,9 @@
                 <button type="button" class="quick-action-btn" onclick="checkAvailability()">⏰ Check Availability</button>
                 <button type="button" class="quick-action-btn" onclick="askLocation()">📍 Ask Location</button>
                 <button type="button" class="quick-action-btn" onclick="toggleNotificationPanel()">🔔 Alerts</button>
+                <button type="button" class="cancel-btn-action" onclick="cancelChat()" title="Cancel chat and return to previous page">
+                    ✕ Cancel Chat
+                </button>
             </div>
         </div>
     </div>
@@ -1510,6 +1513,62 @@
         messageInput.addEventListener('focus', updateLastActivity);
         messageInput.addEventListener('input', updateLastActivity);
         document.addEventListener('click', updateLastActivity);
+        
+        // Cancel chat functionality
+        function cancelChat() {
+            // Check if there are unsaved messages in the input
+            const currentMessage = messageInput.value.trim();
+            
+            if (currentMessage) {
+                // Show confirmation if user has typed something
+                if (confirm('You have an unsaved message. Are you sure you want to cancel and leave this chat?')) {
+                    performCancelAction();
+                }
+            } else {
+                // No unsaved content, just leave
+                performCancelAction();
+            }
+        }
+        
+        function performCancelAction() {
+            // Check if there's a previous page in history
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Fallback to products page if no history
+                window.location.href = '/products';
+            }
+        }
+        
+        // Enhanced cancel with different behavior based on chat state
+        function smartCancel() {
+            const chatKey = getChatKey();
+            const existingMessages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            const currentMessage = messageInput.value.trim();
+            
+            // If there are messages or unsaved content, show confirmation
+            if (existingMessages.length > 0 || currentMessage) {
+                const confirmMessage = existingMessages.length > 0 ? 
+                    'You have an active conversation. Are you sure you want to leave?' :
+                    'You have an unsaved message. Are you sure you want to cancel?';
+                    
+                if (confirm(confirmMessage)) {
+                    performCancelAction();
+                }
+            } else {
+                // No chat history or unsaved content
+                performCancelAction();
+            }
+        }
+        
+        // Add keyboard shortcut for cancel (Escape key)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !document.querySelector('#chatAlertDisableOverlay, #chatAlertEnableOverlay')) {
+                // Only trigger cancel if no modals are open
+                e.preventDefault();
+                cancelChat();
+            }
+        });
     </script>
 </body>
 </html>
