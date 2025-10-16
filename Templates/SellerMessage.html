@@ -1560,15 +1560,6 @@
                 performCancelAction();
             }
         }
-        
-        // Add keyboard shortcut for cancel (Escape key)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !document.querySelector('#chatAlertDisableOverlay, #chatAlertEnableOverlay')) {
-                // Only trigger cancel if no modals are open
-                e.preventDefault();
-                cancelChat();
-            }
-        });
     </script>
 </body>
 </html>
