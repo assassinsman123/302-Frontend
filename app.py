@@ -1,6 +1,6 @@
 import os
 import time
-import hashlib
+import secrets
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import datetime
 
@@ -18,7 +18,11 @@ def ensure_user_session():
 
 # Global dictionary to store password reset tokens
 # Format: {token: {"email": "user@email.com", "timestamp": timestamp}}
+# NOTE: In production, use a secure session store or database instead
 reset_tokens = {}
+
+# Token expiration time (24 hours in seconds)
+TOKEN_EXPIRATION_SECONDS = 86400
 
 # Global list to store all products (default + uploaded)
 products_list = [
@@ -122,15 +126,14 @@ def index():
 def forgot_password():
     if request.method == 'POST':
         email = request.form['email']
-        # Generate a URL-safe reset token using hash
-        token_string = f"{email}_{int(time.time())}"
-        token = hashlib.sha256(token_string.encode()).hexdigest()
+        # Generate a cryptographically secure reset token
+        token = secrets.token_urlsafe(32)
         reset_tokens[token] = {
             "email": email,
             "timestamp": time.time()
         }
         # In a real app, send email with reset link
-        # For now, we'll just display the link in the flash message for testing
+        # NOTE: Displaying link in flash message is for testing only - remove in production
         reset_link = url_for('reset_password', token=token, _external=True)
         flash(f"Password reset link (for testing): {reset_link}", "info")
         return redirect(url_for('index'))
@@ -147,8 +150,8 @@ def reset_password(token):
     
     token_data = reset_tokens[token]
     
-    # Check if token is expired (24 hours = 86400 seconds)
-    if time.time() - token_data['timestamp'] > 86400:
+    # Check if token is expired
+    if time.time() - token_data['timestamp'] > TOKEN_EXPIRATION_SECONDS:
         flash("Reset link has expired. Please request a new one.", "danger")
         del reset_tokens[token]
         return redirect(url_for('forgot_password'))
