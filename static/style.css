@@ -878,24 +878,54 @@ body {
 /* Buttons */
 .nav-left .btn,
 .nav-right .btn {
-    padding: 8px 15px;
-    background: #555;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 25px;
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.3s ease, transform 0.2s ease;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-left .btn::before,
+.nav-right .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+    transition: left 0.5s ease;
+}
+
+.nav-left .btn:hover::before,
+.nav-right .btn:hover::before {
+    left: 100%;
 }
 
 .nav-left .btn.active {
-    background: #007BFF;
+    background: linear-gradient(135deg, #007BFF 0%, #0056b3 100%);
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
 }
 
 .nav-left .btn:hover,
 .nav-right .btn:hover {
-    background: #444;
-    transform: translateY(-2px); /* Slight lift effect on hover */
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+}
+
+.nav-left .btn:active,
+.nav-right .btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
 }
 
 
