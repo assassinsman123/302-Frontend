@@ -19,6 +19,8 @@
       </div>
       <!-- Sell Button -->
       <a href="{{ url_for('upload') }}" class="btn">Sell</a>
+      <!-- Your Listings Button -->
+      <a href="{{ url_for('your_listings') }}" class="btn">Your Listings</a>
       <!-- Categories Dropdown -->
       <div class="categories-dropdown" id="categoriesDropdown">
         <button class="btn active" id="categoriesBtn" onclick="toggleCategories()">Categories ▼</button>
@@ -81,6 +83,10 @@
           </div>
           <div class="menu-divider"></div>
           <div class="menu-actions">
+            <a href="{{ url_for('your_listings') }}" class="menu-item">
+              <span class="menu-icon">📦</span>
+              <span>Your Listings</span>
+            </a>
             <button onclick="logout()" class="menu-item logout-item">
               <span class="menu-icon">🚪</span>
               <span>Logout</span>

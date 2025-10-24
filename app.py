@@ -813,6 +813,17 @@ def reminder():
         return redirect(url_for("index"))
     return render_template('reminder.html')
 
+# Your Listings Route
+@app.route('/your-listings')
+def your_listings():
+    if "user" not in session:
+        flash("Please log in to view your listings.", "warning")
+        return redirect(url_for("index"))
+    
+    # For now, display all products as example
+    # In a real app, you would filter products by the logged-in user
+    return render_template('YourListings.html', products=products_list)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
