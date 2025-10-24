@@ -1,0 +1,23 @@
+# Python virtual environment
+myenv/
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Flask
+instance/
+.webassets-cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Uploads
+static/uploads/
