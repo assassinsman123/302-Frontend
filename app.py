@@ -9,6 +9,11 @@ app.secret_key = "your_secret_key"  # Change this in production
 # Configure Flask for UTF-8 encoding
 app.config['JSON_AS_ASCII'] = False
 
+# Configure session to be permanent and set timeout
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+
 # Helper function to ensure user session exists
 def ensure_user_session():
     if "user" not in session:
@@ -95,6 +100,9 @@ def signup():
             return redirect(url_for('signup'))
 
         # Simulate user creation (no database)
+        # Create session for the new user
+        session.permanent = True
+        session['user'] = email  # Use email as user identifier
         flash("Account created successfully! Please log in.", "success")
         return redirect(url_for('index'))
 
@@ -105,7 +113,9 @@ def signup():
 @app.route('/index', methods=['GET', 'POST'])
 def index():
     if request.method == "POST":
-        # Automatically log in the user and redirect to the products page
+        # Create a permanent session for the user
+        session.permanent = True
+        user = ensure_user_session()
         flash("Login successful!", "success")
         return redirect(url_for('products'))  # Redirect to the products page
 
@@ -167,6 +177,8 @@ def search():
 # Products Page
 @app.route('/products')
 def products():
+    # Ensure user session exists (auto-create if needed)
+    ensure_user_session()
     return render_template('Products.html', products=products_list)
 
 # Upload Route
@@ -823,6 +835,13 @@ def your_listings():
     # For now, display all products as example
     # In a real app, you would filter products by the logged-in user
     return render_template('YourListings.html', products=products_list)
+
+# Customer Support Route
+@app.route('/customer-support')
+def customer_support():
+    # Ensure user session exists (auto-create if needed)
+    ensure_user_session()
+    return render_template('CustomerSupport.html')
 
 
 if __name__ == "__main__":
