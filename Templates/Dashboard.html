@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard - Marketplace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <h2>My Dashboard</h2>
+      <a href="{{ url_for('products') }}" class="btn">Back to Marketplace</a>
+    </div>
+    
+    <div class="nav-right">
+      <!-- Wishlist Icon -->
+      <a href="{{ url_for('wishlist') }}" class="wishlist-icon" title="View Wishlist">❤️</a>
+      <!-- Customer Support Icon -->
+      <a href="{{ url_for('customer_support') }}" class="support-icon" title="Customer Support">🆘</a>
+      <!-- User Icon - Dropdown -->
+      <div class="user-dropdown" id="userDropdown">
+        <span class="user-icon" onclick="toggleUserMenu()" title="User Menu">👤</span>
+        <div class="user-menu" id="userMenu">
+          <div class="user-menu-header">
+            <span class="user-avatar">👤</span>
+            <div class="user-info">
+              <span class="user-name">User</span>
+              <span class="user-status">Online</span>
+            </div>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-actions">
+            <button onclick="logout()" class="menu-item logout-item">
+              <span class="menu-icon">🚪</span>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Container -->
+  <div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <h1>📊 My Dashboard</h1>
+      <p>Track your uploads, purchases, and marketplace activity</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="dashboard-stats">
+      <div class="stat-card">
+        <div class="stat-icon">📤</div>
+        <div class="stat-info">
+          <h3 id="uploadCount">0</h3>
+          <p>Items Uploaded</p>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">🛒</div>
+        <div class="stat-info">
+          <h3 id="buyListCount">0</h3>
+          <p>Items to Buy</p>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">❤️</div>
+        <div class="stat-info">
+          <h3 id="wishlistCount">0</h3>
+          <p>Wishlist Items</p>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <h3 id="purchasedCount">0</h3>
+          <p>Purchased</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Sections -->
+    <div class="dashboard-sections">
+      <!-- Upload Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h2>📤 My Uploads</h2>
+          <a href="{{ url_for('upload') }}" class="btn-add">+ Add New</a>
+        </div>
+        
+        <div id="uploadsList" class="items-grid">
+          <!-- Uploaded items will be loaded here -->
+          <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <h3>No Items Uploaded Yet</h3>
+            <p>Start selling by uploading your first item</p>
+            <a href="{{ url_for('upload') }}" class="btn-primary">Upload Item</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buy List Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h2>🛒 Buy List</h2>
+          <a href="{{ url_for('products') }}" class="btn-add">+ Browse Items</a>
+        </div>
+        
+        <div id="buyList" class="items-grid">
+          <!-- Items user wants to buy will be loaded here -->
+          <div class="empty-state">
+            <div class="empty-icon">🛍️</div>
+            <h3>No Items in Buy List</h3>
+            <p>Add items you're interested in purchasing</p>
+            <a href="{{ url_for('products') }}" class="btn-primary">Browse Marketplace</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Purchased Items Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h2>✅ Purchased Items</h2>
+        </div>
+        
+        <div id="purchasedList" class="items-grid">
+          <!-- Purchased items will be loaded here -->
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>No Purchases Yet</h3>
+            <p>Items you've purchased will appear here</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle user menu
+    function toggleUserMenu() {
+      const userMenu = document.getElementById('userMenu');
+      const userIcon = document.querySelector('.user-icon');
+      
+      userMenu.classList.toggle('active');
+      
+      if (userMenu.classList.contains('active')) {
+        userIcon.classList.add('active');
+      } else {
+        userIcon.classList.remove('active');
+      }
+    }
+
+    // Close user menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const userDropdown = document.getElementById('userDropdown');
+      const userMenu = document.getElementById('userMenu');
+      
+      if (!userDropdown.contains(event.target) && userMenu.classList.contains('active')) {
+        userMenu.classList.remove('active');
+        document.querySelector('.user-icon').classList.remove('active');
+      }
+    });
+
+    // Logout function
+    function logout() {
+      window.location.href = "{{ url_for('logout') }}";
+    }
+
+    // Get current user - Auto-create if needed
+    function getCurrentUser() {
+      let user = localStorage.getItem('current_user');
+      if (!user) {
+        // Auto-create a session instead of redirecting
+        user = 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('current_user', user);
+        console.log('Auto-created user session:', user);
+      }
+      return user;
+    }
+
+    // Load user's uploaded items
+    function loadUploadedItems() {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return;
+
+      const uploadsList = document.getElementById('uploadsList');
+      const allProducts = {{ products|tojson|safe if products else '[]' }};
+      
+      // Filter products uploaded by current user (you'll need to track this in your backend)
+      const userProducts = JSON.parse(localStorage.getItem(`user_uploads_${currentUser}`) || '[]');
+      
+      if (userProducts.length === 0) {
+        return; // Keep empty state
+      }
+
+      uploadsList.innerHTML = '';
+      
+      userProducts.forEach(product => {
+        const itemCard = createItemCard(product, 'upload');
+        uploadsList.appendChild(itemCard);
+      });
+
+      // Update count
+      document.getElementById('uploadCount').textContent = userProducts.length;
+    }
+
+    // Load buy list items
+    function loadBuyList() {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return;
+
+      const buyList = document.getElementById('buyList');
+      const buyListItems = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
+      
+      if (buyListItems.length === 0) {
+        return; // Keep empty state
+      }
+
+      buyList.innerHTML = '';
+      
+      buyListItems.forEach(item => {
+        const itemCard = createItemCard(item, 'buy');
+        buyList.appendChild(itemCard);
+      });
+
+      // Update count
+      document.getElementById('buyListCount').textContent = buyListItems.length;
+    }
+
+    // Load purchased items
+    function loadPurchasedItems() {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return;
+
+      const purchasedList = document.getElementById('purchasedList');
+      const purchasedItems = JSON.parse(localStorage.getItem(`purchased_${currentUser}`) || '[]');
+      
+      if (purchasedItems.length === 0) {
+        return; // Keep empty state
+      }
+
+      purchasedList.innerHTML = '';
+      
+      purchasedItems.forEach(item => {
+        const itemCard = createItemCard(item, 'purchased');
+        purchasedList.appendChild(itemCard);
+      });
+
+      // Update count
+      document.getElementById('purchasedCount').textContent = purchasedItems.length;
+    }
+
+    // Create item card
+    function createItemCard(item, type) {
+      const card = document.createElement('div');
+      card.className = 'dashboard-item-card';
+      
+      card.innerHTML = `
+        <div class="item-image">
+          <img src="${item.image || '/static/images/placeholder.jpg'}" alt="${item.name}">
+          ${type === 'upload' ? '<span class="item-status active">Active</span>' : ''}
+          ${type === 'purchased' ? '<span class="item-status purchased">Purchased</span>' : ''}
+        </div>
+        <div class="item-details">
+          <h3>${item.name}</h3>
+          <p class="item-price">$${item.price}</p>
+          <p class="item-category">${item.category || 'Uncategorized'}</p>
+          ${type === 'upload' ? `
+            <div class="item-actions">
+              <button onclick="viewItem(${item.item_id})" class="btn-view">View</button>
+              <button onclick="editItem(${item.item_id})" class="btn-edit">Edit</button>
+              <button onclick="deleteItem(${item.item_id})" class="btn-delete">Delete</button>
+            </div>
+          ` : ''}
+          ${type === 'buy' ? `
+            <div class="item-actions">
+              <button onclick="contactSeller(${item.item_id})" class="btn-contact">Contact Seller</button>
+              <button onclick="markAsPurchased(${item.item_id})" class="btn-purchased">Mark as Purchased</button>
+              <button onclick="removeFromBuyList(${item.item_id})" class="btn-remove">Remove</button>
+            </div>
+          ` : ''}
+          ${type === 'purchased' ? `
+            <div class="item-actions">
+              <button onclick="leaveReview(${item.item_id})" class="btn-review">Leave Review</button>
+              <p class="purchase-date">Purchased: ${item.purchaseDate || 'N/A'}</p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      
+      return card;
+    }
+
+    // Item action functions
+    function viewItem(itemId) {
+      window.location.href = `/message/seller/${itemId}`;
+    }
+
+    function editItem(itemId) {
+      alert('Edit functionality - redirect to edit page');
+      // window.location.href = `/edit/${itemId}`;
+    }
+
+    function deleteItem(itemId) {
+      if (confirm('Are you sure you want to delete this item?')) {
+        const currentUser = getCurrentUser();
+        let userProducts = JSON.parse(localStorage.getItem(`user_uploads_${currentUser}`) || '[]');
+        userProducts = userProducts.filter(item => item.item_id !== itemId);
+        localStorage.setItem(`user_uploads_${currentUser}`, JSON.stringify(userProducts));
+        loadUploadedItems();
+        showNotification('Item deleted successfully', 'success');
+      }
+    }
+
+    function contactSeller(itemId) {
+      window.location.href = `/message/seller/${itemId}`;
+    }
+
+    function markAsPurchased(itemId) {
+      const currentUser = getCurrentUser();
+      
+      // Get item from buy list
+      let buyList = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
+      const item = buyList.find(i => i.item_id === itemId);
+      
+      if (item) {
+        // Add to purchased
+        let purchased = JSON.parse(localStorage.getItem(`purchased_${currentUser}`) || '[]');
+        item.purchaseDate = new Date().toLocaleDateString();
+        purchased.push(item);
+        localStorage.setItem(`purchased_${currentUser}`, JSON.stringify(purchased));
+        
+        // Remove from buy list
+        buyList = buyList.filter(i => i.item_id !== itemId);
+        localStorage.setItem(`buy_list_${currentUser}`, JSON.stringify(buyList));
+        
+        // Reload sections
+        loadBuyList();
+        loadPurchasedItems();
+        showNotification('Item marked as purchased!', 'success');
+      }
+    }
+
+    function removeFromBuyList(itemId) {
+      const currentUser = getCurrentUser();
+      let buyList = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
+      buyList = buyList.filter(item => item.item_id !== itemId);
+      localStorage.setItem(`buy_list_${currentUser}`, JSON.stringify(buyList));
+      loadBuyList();
+      showNotification('Item removed from buy list', 'info');
+    }
+
+    function leaveReview(itemId) {
+      window.location.href = `/review?item_id=${itemId}`;
+    }
+
+    // Add item to buy list (can be called from product pages)
+    function addToBuyList(item) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return;
+
+      let buyList = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
+      
+      // Check if already in buy list
+      if (buyList.some(i => i.item_id === item.item_id)) {
+        showNotification('Item already in buy list', 'warning');
+        return;
+      }
+      
+      buyList.push(item);
+      localStorage.setItem(`buy_list_${currentUser}`, JSON.stringify(buyList));
+      showNotification('Item added to buy list!', 'success');
+      loadBuyList();
+    }
+
+    // Update wishlist count
+    function updateWishlistCount() {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return;
+
+      const wishlist = JSON.parse(localStorage.getItem(`wishlist_${currentUser}`) || '[]');
+      document.getElementById('wishlistCount').textContent = wishlist.length;
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.textContent = message;
+      
+      notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#FF9800' : '#2196F3'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Initialize dashboard on load
+    window.addEventListener('DOMContentLoaded', function() {
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        loadUploadedItems();
+        loadBuyList();
+        loadPurchasedItems();
+        updateWishlistCount();
+      }
+    });
+
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

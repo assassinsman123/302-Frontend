@@ -19,6 +19,8 @@
       </div>
       <!-- Sell Button -->
       <a href="{{ url_for('upload') }}" class="btn">Sell</a>
+      <!-- Dashboard Button -->
+      <a href="{{ url_for('dashboard') }}" class="btn">Dashboard</a>
       <!-- Your Listings Button -->
       <a href="{{ url_for('your_listings') }}" class="btn">Your Listings</a>
       <!-- Categories Dropdown -->
@@ -85,6 +87,10 @@
           </div>
           <div class="menu-divider"></div>
           <div class="menu-actions">
+            <a href="{{ url_for('dashboard') }}" class="menu-item">
+              <span class="menu-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
             <a href="{{ url_for('your_listings') }}" class="menu-item">
               <span class="menu-icon">📦</span>
               <span>Your Listings</span>

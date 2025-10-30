@@ -376,10 +376,17 @@ def message_seller(item_id):
 # Dashboard Route (Protected Page)
 @app.route('/dashboard')
 def dashboard():
-    if "user" not in session:
-        flash("Please log in first.", "warning")
-        return redirect(url_for("index"))
-    return f"Welcome, {session['user']}! <br><a href='/logout'>Logout</a>"
+    # Ensure user session exists (auto-create if needed)
+    user = ensure_user_session()
+    
+    # Get all products to pass to template
+    products_with_ids = []
+    for idx, product in enumerate(products_list):
+        product_copy = product.copy()
+        product_copy['item_id'] = idx
+        products_with_ids.append(product_copy)
+    
+    return render_template('Dashboard.html', products=products_with_ids, user=user)
 
 # Wishlist Routes
 @app.route('/wishlist')
