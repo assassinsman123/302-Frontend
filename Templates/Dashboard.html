@@ -61,10 +61,10 @@
       </div>
       
       <div class="stat-card">
-        <div class="stat-icon">🛒</div>
+        <div class="stat-icon">💬</div>
         <div class="stat-info">
-          <h3 id="buyListCount">0</h3>
-          <p>Items to Buy</p>
+          <h3 id="messagesCount">0</h3>
+          <p>Messages</p>
         </div>
       </div>
       
@@ -77,10 +77,10 @@
       </div>
       
       <div class="stat-card">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon">🔔</div>
         <div class="stat-info">
-          <h3 id="purchasedCount">0</h3>
-          <p>Purchased</p>
+          <h3 id="alertsCount">0</h3>
+          <p>Active Alerts</p>
         </div>
       </div>
     </div>
@@ -105,36 +105,30 @@
         </div>
       </div>
 
-      <!-- Buy List Section -->
+      <!-- Messages Section -->
       <div class="dashboard-section">
         <div class="section-header">
-          <h2>🛒 Buy List</h2>
-          <a href="{{ url_for('products') }}" class="btn-add">+ Browse Items</a>
+          <h2>💬 Messages</h2>
+          <span class="section-info">View all your conversations</span>
         </div>
         
-        <div id="buyList" class="items-grid">
-          <!-- Items user wants to buy will be loaded here -->
-          <div class="empty-state">
-            <div class="empty-icon">🛍️</div>
-            <h3>No Items in Buy List</h3>
-            <p>Add items you're interested in purchasing</p>
-            <a href="{{ url_for('products') }}" class="btn-primary">Browse Marketplace</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Purchased Items Section -->
-      <div class="dashboard-section">
-        <div class="section-header">
-          <h2>✅ Purchased Items</h2>
-        </div>
-        
-        <div id="purchasedList" class="items-grid">
-          <!-- Purchased items will be loaded here -->
-          <div class="empty-state">
-            <div class="empty-icon">📋</div>
-            <h3>No Purchases Yet</h3>
-            <p>Items you've purchased will appear here</p>
+        <div id="messagesSection" class="messages-section">
+          <!-- Single clickable card to view all messages -->
+          <div class="messages-overview-card" onclick="goToMessages()">
+            <div class="messages-icon">💬</div>
+            <div class="messages-info">
+              <h3>View All Messages</h3>
+              <p id="messagesDescription">Click to see your conversations with sellers</p>
+              <div class="messages-stats">
+                <span class="stat-badge">
+                  <strong id="totalConversations">0</strong> Conversations
+                </span>
+                <span class="stat-badge">
+                  <strong id="totalMessages">0</strong> Total Messages
+                </span>
+              </div>
+            </div>
+            <div class="arrow-icon">→</div>
           </div>
         </div>
       </div>
@@ -210,50 +204,44 @@
       document.getElementById('uploadCount').textContent = userProducts.length;
     }
 
-    // Load buy list items
-    function loadBuyList() {
+    // Load messages summary
+    function loadMessages() {
       const currentUser = getCurrentUser();
       if (!currentUser) return;
 
-      const buyList = document.getElementById('buyList');
-      const buyListItems = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
+      // Get all chat messages from localStorage
+      let totalConversations = 0;
+      let totalMessages = 0;
       
-      if (buyListItems.length === 0) {
-        return; // Keep empty state
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('chat_messages_')) {
+          const messages = JSON.parse(localStorage.getItem(key) || '[]');
+          if (messages.length > 0) {
+            totalConversations++;
+            totalMessages += messages.length;
+          }
+        }
       }
-
-      buyList.innerHTML = '';
       
-      buyListItems.forEach(item => {
-        const itemCard = createItemCard(item, 'buy');
-        buyList.appendChild(itemCard);
-      });
-
-      // Update count
-      document.getElementById('buyListCount').textContent = buyListItems.length;
+      // Update the overview card
+      document.getElementById('totalConversations').textContent = totalConversations;
+      document.getElementById('totalMessages').textContent = totalMessages;
+      document.getElementById('messagesCount').textContent = totalConversations;
+      
+      // Update description based on whether there are messages
+      const description = document.getElementById('messagesDescription');
+      if (totalConversations > 0) {
+        description.textContent = `You have ${totalConversations} active conversation${totalConversations > 1 ? 's' : ''}`;
+      } else {
+        description.textContent = 'No conversations yet. Start chatting with sellers!';
+      }
     }
 
-    // Load purchased items
-    function loadPurchasedItems() {
-      const currentUser = getCurrentUser();
-      if (!currentUser) return;
-
-      const purchasedList = document.getElementById('purchasedList');
-      const purchasedItems = JSON.parse(localStorage.getItem(`purchased_${currentUser}`) || '[]');
-      
-      if (purchasedItems.length === 0) {
-        return; // Keep empty state
-      }
-
-      purchasedList.innerHTML = '';
-      
-      purchasedItems.forEach(item => {
-        const itemCard = createItemCard(item, 'purchased');
-        purchasedList.appendChild(itemCard);
-      });
-
-      // Update count
-      document.getElementById('purchasedCount').textContent = purchasedItems.length;
+    // Go to messages page
+    function goToMessages() {
+      // Navigate to the messages page
+      window.location.href = "{{ url_for('messages') }}";
     }
 
     // Create item card
@@ -265,7 +253,6 @@
         <div class="item-image">
           <img src="${item.image || '/static/images/placeholder.jpg'}" alt="${item.name}">
           ${type === 'upload' ? '<span class="item-status active">Active</span>' : ''}
-          ${type === 'purchased' ? '<span class="item-status purchased">Purchased</span>' : ''}
         </div>
         <div class="item-details">
           <h3>${item.name}</h3>
@@ -276,19 +263,6 @@
               <button onclick="viewItem(${item.item_id})" class="btn-view">View</button>
               <button onclick="editItem(${item.item_id})" class="btn-edit">Edit</button>
               <button onclick="deleteItem(${item.item_id})" class="btn-delete">Delete</button>
-            </div>
-          ` : ''}
-          ${type === 'buy' ? `
-            <div class="item-actions">
-              <button onclick="contactSeller(${item.item_id})" class="btn-contact">Contact Seller</button>
-              <button onclick="markAsPurchased(${item.item_id})" class="btn-purchased">Mark as Purchased</button>
-              <button onclick="removeFromBuyList(${item.item_id})" class="btn-remove">Remove</button>
-            </div>
-          ` : ''}
-          ${type === 'purchased' ? `
-            <div class="item-actions">
-              <button onclick="leaveReview(${item.item_id})" class="btn-review">Leave Review</button>
-              <p class="purchase-date">Purchased: ${item.purchaseDate || 'N/A'}</p>
             </div>
           ` : ''}
         </div>
@@ -318,67 +292,6 @@
       }
     }
 
-    function contactSeller(itemId) {
-      window.location.href = `/message/seller/${itemId}`;
-    }
-
-    function markAsPurchased(itemId) {
-      const currentUser = getCurrentUser();
-      
-      // Get item from buy list
-      let buyList = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
-      const item = buyList.find(i => i.item_id === itemId);
-      
-      if (item) {
-        // Add to purchased
-        let purchased = JSON.parse(localStorage.getItem(`purchased_${currentUser}`) || '[]');
-        item.purchaseDate = new Date().toLocaleDateString();
-        purchased.push(item);
-        localStorage.setItem(`purchased_${currentUser}`, JSON.stringify(purchased));
-        
-        // Remove from buy list
-        buyList = buyList.filter(i => i.item_id !== itemId);
-        localStorage.setItem(`buy_list_${currentUser}`, JSON.stringify(buyList));
-        
-        // Reload sections
-        loadBuyList();
-        loadPurchasedItems();
-        showNotification('Item marked as purchased!', 'success');
-      }
-    }
-
-    function removeFromBuyList(itemId) {
-      const currentUser = getCurrentUser();
-      let buyList = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
-      buyList = buyList.filter(item => item.item_id !== itemId);
-      localStorage.setItem(`buy_list_${currentUser}`, JSON.stringify(buyList));
-      loadBuyList();
-      showNotification('Item removed from buy list', 'info');
-    }
-
-    function leaveReview(itemId) {
-      window.location.href = `/review?item_id=${itemId}`;
-    }
-
-    // Add item to buy list (can be called from product pages)
-    function addToBuyList(item) {
-      const currentUser = getCurrentUser();
-      if (!currentUser) return;
-
-      let buyList = JSON.parse(localStorage.getItem(`buy_list_${currentUser}`) || '[]');
-      
-      // Check if already in buy list
-      if (buyList.some(i => i.item_id === item.item_id)) {
-        showNotification('Item already in buy list', 'warning');
-        return;
-      }
-      
-      buyList.push(item);
-      localStorage.setItem(`buy_list_${currentUser}`, JSON.stringify(buyList));
-      showNotification('Item added to buy list!', 'success');
-      loadBuyList();
-    }
-
     // Update wishlist count
     function updateWishlistCount() {
       const currentUser = getCurrentUser();
@@ -386,6 +299,12 @@
 
       const wishlist = JSON.parse(localStorage.getItem(`wishlist_${currentUser}`) || '[]');
       document.getElementById('wishlistCount').textContent = wishlist.length;
+    }
+
+    // Update alerts count
+    function updateAlertsCount() {
+      const bookingAlerts = JSON.parse(localStorage.getItem('bookingAlerts') || '[]');
+      document.getElementById('alertsCount').textContent = bookingAlerts.length;
     }
 
     // Show notification
@@ -420,9 +339,9 @@
       const currentUser = getCurrentUser();
       if (currentUser) {
         loadUploadedItems();
-        loadBuyList();
-        loadPurchasedItems();
+        loadMessages();
         updateWishlistCount();
+        updateAlertsCount();
       }
     });
 

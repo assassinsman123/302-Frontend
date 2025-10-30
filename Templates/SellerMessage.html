@@ -194,6 +194,14 @@
             category: "{{ item.category }}"
         };
 
+        // User and seller data from Flask backend
+        const currentUser = "{{ current_user }}";
+        const sellerId = "{{ seller_id }}";
+        const sellerName = "{{ seller_name }}";
+        
+        // Backend messages data
+        const backendMessages = {{ messages|tojson|safe }};
+
         // Get product information from Flask-provided data
         function getCurrentProduct() {
             console.log('Using Flask-provided product data:', currentProductData);
@@ -1102,6 +1110,9 @@
                 id: messageId || Date.now() + Math.random(),
                 content: message,
                 isUser: isUser,
+                sender_id: isUser ? currentUser : sellerId,
+                sender_name: isUser ? "You" : sellerName,
+                receiver_id: isUser ? sellerId : currentUser,
                 timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
                 fullTimestamp: new Date().toISOString(),
                 date: new Date().toDateString()
@@ -1427,6 +1438,10 @@
             localStorage.setItem('currentItemId', currentItemId);
             
             console.log('Chat initialized for item ID:', currentItemId);
+            console.log('Current user:', currentUser);
+            console.log('Seller ID:', sellerId);
+            console.log('Seller name:', sellerName);
+            console.log('Backend messages:', backendMessages);
             
             // Load product information first
             currentProduct = loadProductInfo();
@@ -1442,7 +1457,26 @@
             
             // Check for existing chat history before loading
             const chatKey = getChatKey();
-            const existingMessages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            let existingMessages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            
+            // Merge backend messages with localStorage (backend takes precedence)
+            if (backendMessages && backendMessages.length > 0) {
+                // Convert backend messages to localStorage format
+                existingMessages = backendMessages.map(msg => ({
+                    id: msg.timestamp,
+                    content: msg.content,
+                    isUser: msg.sender_id === currentUser,
+                    sender_id: msg.sender_id,
+                    sender_name: msg.sender_name,
+                    receiver_id: msg.receiver_id,
+                    timestamp: new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    fullTimestamp: msg.timestamp,
+                    date: new Date(msg.timestamp).toDateString()
+                }));
+                
+                // Save merged messages back to localStorage
+                localStorage.setItem(chatKey, JSON.stringify(existingMessages));
+            }
             
             // Load existing messages from localStorage
             loadMessagesFromStorage();

@@ -28,7 +28,9 @@ products_list = [
         "image": "images/daniel-korpai-hbTKIbuMmBI-unsplash.jpg",
         "category": "Electronics",
         "condition": "Excellent",
-        "features": "Heart rate monitor, GPS tracking, Waterproof design, 7-day battery life"
+        "features": "Heart rate monitor, GPS tracking, Waterproof design, 7-day battery life",
+        "seller_id": "seller_001",
+        "seller_name": "Alex Thompson"
     },
     {
         "name": "Laptop", 
@@ -36,7 +38,9 @@ products_list = [
         "image": "images/kompjuteri-com-Saj5h85DbOs-unsplash.jpg",
         "category": "Electronics",
         "condition": "Good",
-        "features": "Intel Core i5, 8GB RAM, 256GB SSD, Full HD display, Lightweight design"
+        "features": "Intel Core i5, 8GB RAM, 256GB SSD, Full HD display, Lightweight design",
+        "seller_id": "seller_002",
+        "seller_name": "Sarah Johnson"
     },
     {
         "name": "Pants", 
@@ -44,7 +48,9 @@ products_list = [
         "image": "images/matthew-moloney-YeGao3uk8kI-unsplash.jpg",
         "category": "Clothing",
         "condition": "New",
-        "features": "Premium cotton blend, Tailored fit, Multiple color options, Machine washable"
+        "features": "Premium cotton blend, Tailored fit, Multiple color options, Machine washable",
+        "seller_id": "seller_003",
+        "seller_name": "Mike Chen"
     },
     {
         "name": "T-Shirts", 
@@ -52,7 +58,9 @@ products_list = [
         "image": "images/ryan-hoffman-6Nub980bI3I-unsplash.jpg",
         "category": "Clothing",
         "condition": "Excellent",
-        "features": "100% organic cotton, Comfortable fit, Pre-shrunk, Various sizes available"
+        "features": "100% organic cotton, Comfortable fit, Pre-shrunk, Various sizes available",
+        "seller_id": "seller_004",
+        "seller_name": "Emily Davis"
     },
     {
         "name": "Smart Phone", 
@@ -60,7 +68,9 @@ products_list = [
         "image": "images/shiwa-id-Uae7ouMw91A-unsplash.jpg",
         "category": "Electronics",
         "condition": "Good",
-        "features": "Latest Android OS, Dual camera, 128GB storage, Fast charging, Unlocked"
+        "features": "Latest Android OS, Dual camera, 128GB storage, Fast charging, Unlocked",
+        "seller_id": "seller_005",
+        "seller_name": "David Wilson"
     },
     {
         "name": "Shoes", 
@@ -68,7 +78,9 @@ products_list = [
         "image": "images/xavier-teo-SxAXphIPWeg-unsplash.jpg",
         "category": "Fashion",
         "condition": "Used",
-        "features": "Comfortable sole, Durable materials, Classic design, Multiple sizes"
+        "features": "Comfortable sole, Durable materials, Classic design, Multiple sizes",
+        "seller_id": "seller_006",
+        "seller_name": "Lisa Garcia"
     },
 ]
 
@@ -76,8 +88,15 @@ products_list = [
 user_wishlists = {}
 
 # Global dictionary to store chat messages
-# Format: {item_id: [{"sender": "user_id", "content": "message", "timestamp": "time"}]}
+# Format: {conversation_key: [{"sender_id": "user_id", "receiver_id": "user_id", "content": "message", "timestamp": "time"}]}
+# conversation_key format: "sender_id:receiver_id:item_id" (always sorted alphabetically by user ids)
 chat_messages = {}
+
+def get_conversation_key(user1_id, user2_id, item_id):
+    """Generate a unique conversation key for two users and an item"""
+    # Sort user IDs alphabetically to ensure consistency
+    users = sorted([user1_id, user2_id])
+    return f"{users[0]}:{users[1]}:{item_id}"
 
 app.config
 @app.route('/')
@@ -103,8 +122,8 @@ def signup():
         # Create session for the new user
         session.permanent = True
         session['user'] = email  # Use email as user identifier
-        flash("Account created successfully! Please log in.", "success")
-        return redirect(url_for('index'))
+        flash("Account created successfully! Welcome to your dashboard!", "success")
+        return redirect(url_for('dashboard'))  # Redirect to dashboard after signup
 
     return render_template('signup.html')
 
@@ -117,7 +136,7 @@ def index():
         session.permanent = True
         user = ensure_user_session()
         flash("Login successful!", "success")
-        return redirect(url_for('products'))  # Redirect to the products page
+        return redirect(url_for('dashboard'))  # Redirect to the dashboard page
 
     return render_template("index.html")
 
@@ -214,7 +233,9 @@ def upload():
                 "image": f"uploads/{image_filename}",
                 "category": category,
                 "condition": condition,
-                "features": features
+                "features": features,
+                "seller_id": session['user'],
+                "seller_name": session.get('user_name', session['user'])
             }
             products_list.append(new_product)
             
@@ -336,6 +357,8 @@ def message_seller(item_id):
     # Find the product by index (item_id)
     if 0 <= item_id < len(products_list):
         item = products_list[item_id]
+        seller_id = item.get('seller_id', 'unknown_seller')
+        seller_name = item.get('seller_name', 'Unknown Seller')
         
         # Check if item is in user's wishlist
         is_in_wishlist = False
@@ -343,32 +366,39 @@ def message_seller(item_id):
             is_in_wishlist = True
         
         if request.method == "POST":
-            message = request.form.get('message')
+            message_content = request.form.get('message')
             
-            # Initialize message list for this item if it doesn't exist
-            if item_id not in chat_messages:
-                chat_messages[item_id] = []
-                # Add welcome message if this is the first interaction
+            # Get conversation key
+            conversation_key = get_conversation_key(user, seller_id, item_id)
+            
+            # Initialize message list for this conversation if it doesn't exist
+            if conversation_key not in chat_messages:
+                chat_messages[conversation_key] = []
+                # Add welcome message from seller if this is the first interaction
                 welcome_message = {
-                    "sender": "seller",
+                    "sender_id": seller_id,
+                    "sender_name": seller_name,
+                    "receiver_id": user,
                     "content": f"Hi! Thanks for your interest in {item['name']}. How can I help you?",
-                    "timestamp": datetime.now().strftime("%H:%M")
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                chat_messages[item_id].append(welcome_message)
+                chat_messages[conversation_key].append(welcome_message)
             
             # Add user's message to the chat
-            if message and message.strip():
+            if message_content and message_content.strip():
                 user_message = {
-                    "sender": session['user'],
-                    "content": message.strip(),
-                    "timestamp": datetime.now().strftime("%H:%M")
+                    "sender_id": user,
+                    "sender_name": "You",
+                    "receiver_id": seller_id,
+                    "content": message_content.strip(),
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                chat_messages[item_id].append(user_message)
+                chat_messages[conversation_key].append(user_message)
             
             flash(f"Message sent! Redirecting to chat with seller.", "success")
             return redirect(url_for('chat_with_seller', item_id=item_id))
         
-        return render_template('ItemMessage.html', item=item, item_id=item_id, is_in_wishlist=is_in_wishlist)
+        return render_template('ItemMessage.html', item=item, item_id=item_id, is_in_wishlist=is_in_wishlist, seller_name=seller_name)
     else:
         flash("Product not found.", "danger")
         return redirect(url_for('products'))
@@ -504,21 +534,34 @@ def chat_with_seller(item_id):
     # Find the product by index (item_id)
     if 0 <= item_id < len(products_list):
         item = products_list[item_id]
+        seller_id = item.get('seller_id', 'unknown_seller')
+        seller_name = item.get('seller_name', 'Unknown Seller')
         
-        # Get existing messages for this item
-        messages = chat_messages.get(item_id, [])
+        # Get conversation key
+        conversation_key = get_conversation_key(user, seller_id, item_id)
+        
+        # Get existing messages for this conversation
+        messages = chat_messages.get(conversation_key, [])
         
         # Add welcome message if no messages exist
         if not messages:
             welcome_message = {
-                "sender": "seller",
+                "sender_id": seller_id,
+                "sender_name": seller_name,
+                "receiver_id": user,
                 "content": f"Hi! Thanks for your interest in {item['name']}. How can I help you?",
-                "timestamp": datetime.now().strftime("%H:%M")
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-            chat_messages[item_id] = [welcome_message]
-            messages = chat_messages[item_id]
+            chat_messages[conversation_key] = [welcome_message]
+            messages = chat_messages[conversation_key]
         
-        return render_template('SellerMessage.html', item=item, item_id=item_id, messages=messages)
+        return render_template('SellerMessage.html', 
+                             item=item, 
+                             item_id=item_id, 
+                             messages=messages,
+                             current_user=user,
+                             seller_id=seller_id,
+                             seller_name=seller_name)
     else:
         flash("Product not found.", "danger")
         return redirect(url_for('products'))
@@ -529,6 +572,7 @@ def send_message_api(item_id):
     if "user" not in session:
         return jsonify({"success": False, "message": "Please log in"}), 401
     
+    user = session['user']
     data = request.get_json()
     message_content = data.get('message', '').strip()
     
@@ -538,17 +582,25 @@ def send_message_api(item_id):
     if not (0 <= item_id < len(products_list)):
         return jsonify({"success": False, "message": "Product not found"}), 404
     
-    # Initialize message list for this item if it doesn't exist
-    if item_id not in chat_messages:
-        chat_messages[item_id] = []
+    item = products_list[item_id]
+    seller_id = item.get('seller_id', 'unknown_seller')
+    
+    # Get conversation key
+    conversation_key = get_conversation_key(user, seller_id, item_id)
+    
+    # Initialize message list for this conversation if it doesn't exist
+    if conversation_key not in chat_messages:
+        chat_messages[conversation_key] = []
     
     # Add user message to the chat
     user_message = {
-        "sender": session['user'],
+        "sender_id": user,
+        "sender_name": "You",
+        "receiver_id": seller_id,
         "content": message_content,
-        "timestamp": datetime.now().strftime("%H:%M")
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
-    chat_messages[item_id].append(user_message)
+    chat_messages[conversation_key].append(user_message)
     
     return jsonify({
         "success": True, 
@@ -823,6 +875,68 @@ def logout():
     session.pop("user", None)
     flash("You have been logged out.", "info")
     return redirect(url_for('index'))
+
+# Messages Route
+@app.route('/messages')
+def messages():
+    # Ensure user session exists (auto-create if needed)
+    user = ensure_user_session()
+    
+    # Get all conversations for the current user
+    user_conversations = []
+    processed_items = set()  # Track items we've already added to avoid duplicates
+    
+    for conversation_key, messages_list in chat_messages.items():
+        # Parse conversation key: "user1:user2:item_id"
+        parts = conversation_key.split(':')
+        if len(parts) != 3:
+            continue
+            
+        user1_id, user2_id, item_id_str = parts
+        
+        # Check if current user is part of this conversation
+        if user not in [user1_id, user2_id]:
+            continue
+        
+        try:
+            item_id = int(item_id_str)
+        except ValueError:
+            continue
+            
+        # Skip if we've already processed this item
+        if item_id in processed_items:
+            continue
+            
+        if 0 <= item_id < len(products_list):
+            item = products_list[item_id]
+            
+            # Determine who the other person in the conversation is
+            other_user_id = user2_id if user1_id == user else user1_id
+            
+            # Get the last message
+            last_message = messages_list[-1] if messages_list else None
+            
+            # Count unread messages (messages from the other user)
+            unread_count = sum(1 for msg in messages_list if msg.get('sender_id') == other_user_id)
+            
+            user_conversations.append({
+                'item_id': item_id,
+                'item': item,
+                'messages': messages_list,
+                'last_message': last_message,
+                'message_count': len(messages_list),
+                'unread_count': unread_count,
+                'other_user_id': other_user_id,
+                'other_user_name': item.get('seller_name', 'Unknown User'),
+                'conversation_key': conversation_key
+            })
+            
+            processed_items.add(item_id)
+    
+    # Sort conversations by most recent message
+    user_conversations.sort(key=lambda x: x['last_message']['timestamp'] if x['last_message'] else '', reverse=True)
+    
+    return render_template('Messages.html', conversations=user_conversations)
 
 # Reminder Route
 @app.route('/reminder')
