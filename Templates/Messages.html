@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Messages</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {{ ajax_style|safe }}
+  {{ jquery_script|safe }}
 </head>
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-left">
-            <h1 class="brand-logo">Campus Marketplace</h1>
+            <h1 class="brand-logo">Marketplace</h1>
         </div>
         <div class="nav-center">
             <a href="{{ url_for('dashboard') }}" class="nav-btn">Dashboard</a>
@@ -161,5 +163,6 @@
             }
         });
     </script>
+  {{ ajax_script|safe }}
 </body>
 </html>

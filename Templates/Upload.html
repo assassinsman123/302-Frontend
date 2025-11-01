@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Upload Product - Marketplace</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {{ ajax_style|safe }}
+  {{ jquery_script|safe }}
 </head>
 <body>
   <!-- Navbar -->
@@ -122,5 +124,6 @@
       }
     });
   </script>
+  {{ ajax_script|safe }}
 </body>
 </html>

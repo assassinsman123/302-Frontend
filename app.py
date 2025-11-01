@@ -14,6 +14,20 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 
+# Inject minimal AJAX scripts into all templates
+@app.context_processor
+def inject_ajax():
+    """Inject jQuery and minimal AJAX handler"""
+    return dict(
+        jquery_script='<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>',
+        ajax_script='''<script>
+$(function(){function t(t,a){$(".toast").remove();var e="success"===a?"✓":"error"===a||"danger"===a?"✕":"warning"===a?"⚠":"ℹ",s=$("<div>").addClass("toast toast-"+a).html('<div class="toast-body"><span>'+e+"</span> "+t+'<button class="toast-close">×</button></div>').appendTo("body");setTimeout(function(){s.addClass("show")},10);var o=setTimeout(function(){s.removeClass("show"),setTimeout(function(){s.remove()},300)},5e3);s.find(".toast-close").click(function(){clearTimeout(o),s.removeClass("show"),setTimeout(function(){s.remove()},300)})}window.showToast=t,$.ajaxSetup({headers:{"X-Requested-With":"XMLHttpRequest"}}),$("form").submit(function(a){var e=$(this),s=e.attr("action")||window.location.pathname;if(s.includes("/index")||s.includes("/signup")||s.includes("/forgot_password")||s.includes("/upload")||s.includes("/review")||s.includes("/message")){a.preventDefault();var o=new FormData(this);$.ajax({url:s,method:"POST",data:o,processData:!1,contentType:!1,success:function(a){t(a.message,a.type),a.redirect&&setTimeout(function(){window.location.href=a.redirect},1e3)},error:function(a){var e=a.responseJSON||{};t(e.message||"An error occurred","error")}})}}),$(document).on("click",'a[href*="/wishlist"],a[href*="/logout"]',function(a){a.preventDefault();var e=$(this).attr("href");$.ajax({url:e+(e.includes("?")?"&":"?")+"ajax=1",method:"GET",success:function(a){t(a.message,a.type||"success"),a.redirect&&setTimeout(function(){window.location.href=a.redirect},1e3)},error:function(a){var e=a.responseJSON||{};t(e.message||"Action failed","error")}})})});
+</script>''',
+        ajax_style='''<style>
+.toast{position:fixed;top:-100px;right:20px;min-width:300px;background:#fff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:10000;transition:all .3s;opacity:0}.toast.show{top:20px;opacity:1}.toast-body{display:flex;align-items:center;padding:16px 20px;gap:12px}.toast-body>span:first-child{font-size:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#6366f1;color:#fff}.toast-close{background:0 0;border:0;font-size:20px;color:#999;cursor:pointer;margin-left:auto}.toast-success .toast-body>span:first-child{background:#10b981}.toast-error .toast-body>span:first-child{background:#ef4444}.toast-warning .toast-body>span:first-child{background:#f59e0b}.toast-info .toast-body>span:first-child{background:#3b82f6}@media(max-width:768px){.toast{left:20px;right:20px;min-width:auto}}
+</style>'''
+    )
+
 # Helper function to ensure user session exists
 def ensure_user_session():
     if "user" not in session:
@@ -115,15 +129,22 @@ def signup():
         confirm_password = request.form['confirm_password']
 
         if password != confirm_password:
-            flash("Passwords do not match!", "danger")
-            return redirect(url_for('signup'))
+            return jsonify({
+                "success": False,
+                "message": "Passwords do not match!",
+                "type": "danger"
+            }), 400
 
         # Simulate user creation (no database)
         # Create session for the new user
         session.permanent = True
         session['user'] = email  # Use email as user identifier
-        flash("Account created successfully! Welcome to your dashboard!", "success")
-        return redirect(url_for('dashboard'))  # Redirect to dashboard after signup
+        return jsonify({
+            "success": True,
+            "message": "Account created successfully! Welcome to your dashboard!",
+            "type": "success",
+            "redirect": url_for('dashboard')
+        })
 
     return render_template('signup.html')
 
@@ -135,8 +156,12 @@ def index():
         # Create a permanent session for the user
         session.permanent = True
         user = ensure_user_session()
-        flash("Login successful!", "success")
-        return redirect(url_for('dashboard'))  # Redirect to the dashboard page
+        return jsonify({
+            "success": True,
+            "message": "Login successful!",
+            "type": "success",
+            "redirect": url_for('dashboard')
+        })
 
     return render_template("index.html")
 
@@ -147,8 +172,12 @@ def forgot_password():
     if request.method == 'POST':
         email = request.form['email']
         # Add logic to handle password reset (e.g., send an email)
-        flash("If this email exists, a password reset link has been sent.", "info")
-        return redirect(url_for('index'))
+        return jsonify({
+            "success": True,
+            "message": "If this email exists, a password reset link has been sent.",
+            "type": "info",
+            "redirect": url_for('index')
+        })
     return render_template('ForgotPassword.html')
 
 
@@ -197,15 +226,28 @@ def search():
 @app.route('/products')
 def products():
     # Ensure user session exists (auto-create if needed)
-    ensure_user_session()
-    return render_template('Products.html', products=products_list)
+    user = ensure_user_session()
+    
+    # Add sender_id (current user) and receiver_id (seller) to each product
+    products_with_ids = []
+    for product in products_list:
+        product_copy = product.copy()
+        product_copy['sender_id'] = user  # Current user viewing the product
+        product_copy['receiver_id'] = product.get('seller_id', 'unknown_seller')  # The seller
+        products_with_ids.append(product_copy)
+    
+    return render_template('Products.html', products=products_with_ids)
 
 # Upload Route
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if "user" not in session:
-        flash("Please log in to upload a product.", "warning")
-        return redirect(url_for("index"))
+        return jsonify({
+            "success": False,
+            "message": "Please log in to upload a product.",
+            "type": "warning",
+            "redirect": url_for('index')
+        }), 401
     
     if request.method == "POST":
         title = request.form.get('title')
@@ -239,11 +281,18 @@ def upload():
             }
             products_list.append(new_product)
             
-            flash(f"Product '{title}' uploaded successfully!", "success")
-            return redirect(url_for('products'))
+            return jsonify({
+                "success": True,
+                "message": f"Product '{title}' uploaded successfully!",
+                "type": "success",
+                "redirect": url_for('products')
+            })
         else:
-            flash("Please upload an image.", "danger")
-            return redirect(url_for('upload'))
+            return jsonify({
+                "success": False,
+                "message": "Please upload an image.",
+                "type": "danger"
+            }), 400
     
     return render_template('Upload.html')
 
@@ -255,13 +304,21 @@ def review():
     
     if request.method == "POST":
         if "user" not in session:
-            flash("Please log in to submit a review.", "warning")
-            return redirect(url_for("index"))
+            return jsonify({
+                "success": False,
+                "message": "Please log in to submit a review.",
+                "type": "warning",
+                "redirect": url_for('index')
+            }), 401
         
         rating = request.form['rating']
         comment = request.form['comment']
-        flash("Thank you for your seller review!", "success")
-        return redirect(url_for('products'))
+        return jsonify({
+            "success": True,
+            "message": "Thank you for your seller review!",
+            "type": "success",
+            "redirect": url_for('products')
+        })
     
     # Get product information if item_id is provided
     product_info = None
@@ -395,13 +452,21 @@ def message_seller(item_id):
                 }
                 chat_messages[conversation_key].append(user_message)
             
-            flash(f"Message sent! Redirecting to chat with seller.", "success")
-            return redirect(url_for('chat_with_seller', item_id=item_id))
+            return jsonify({
+                "success": True,
+                "message": "Message sent! Redirecting to chat with seller.",
+                "type": "success",
+                "redirect": url_for('chat_with_seller', item_id=item_id)
+            })
         
         return render_template('ItemMessage.html', item=item, item_id=item_id, is_in_wishlist=is_in_wishlist, seller_name=seller_name)
     else:
-        flash("Product not found.", "danger")
-        return redirect(url_for('products'))
+        return jsonify({
+            "success": False,
+            "message": "Product not found.",
+            "type": "danger",
+            "redirect": url_for('products')
+        }), 404
 
 # Dashboard Route (Protected Page)
 @app.route('/dashboard')
@@ -477,9 +542,19 @@ def remove_from_wishlist(item_id):
     user = ensure_user_session()
     if user in user_wishlists and item_id in user_wishlists[user]:
         user_wishlists[user].remove(item_id)
-        flash(f"Removed {products_list[item_id]['name']} from your wishlist!", "success")
+        message = f"Removed {products_list[item_id]['name']} from your wishlist!"
+        message_type = "success"
     else:
-        flash("Item not found in your wishlist.", "info")
+        message = "Item not found in your wishlist."
+        message_type = "info"
+    
+    # Check if it's an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
+        return jsonify({
+            "success": True,
+            "message": message,
+            "type": message_type
+        })
     
     return redirect(request.referrer or url_for('wishlist'))
 
@@ -510,18 +585,21 @@ def toggle_wishlist(item_id):
                 "success": True, 
                 "message": message, 
                 "action": action,
-                "is_in_wishlist": not is_in_wishlist
+                "is_in_wishlist": not is_in_wishlist,
+                "type": "success"
             })
         
-        flash(message, "success")
+        return redirect(request.referrer or url_for('products'))
     else:
         message = "Product not found."
         
         # Check if it's an AJAX request
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.args:
-            return jsonify({"success": False, "message": message})
-            
-        flash(message, "danger")
+            return jsonify({
+                "success": False,
+                "message": message,
+                "type": "danger"
+            })
     
     return redirect(request.referrer or url_for('products'))
 
@@ -563,7 +641,14 @@ def chat_with_seller(item_id):
                              seller_id=seller_id,
                              seller_name=seller_name)
     else:
-        flash("Product not found.", "danger")
+        # Check if it's an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                "success": False,
+                "message": "Product not found.",
+                "type": "danger",
+                "redirect": url_for('products')
+            }), 404
         return redirect(url_for('products'))
 
 # API endpoint for sending messages (for future AJAX implementation)
@@ -873,8 +958,18 @@ def get_current_user():
 @app.route('/logout')
 def logout():
     session.pop("user", None)
-    flash("You have been logged out.", "info")
-    return redirect(url_for('index'))
+    
+    # Check if it's an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            "success": True,
+            "message": "You have been logged out.",
+            "type": "info",
+            "redirect": url_for('index')
+        })
+    else:
+        # Regular navigation - redirect normally
+        return redirect(url_for('index'))
 
 # Messages Route
 @app.route('/messages')
@@ -942,16 +1037,24 @@ def messages():
 @app.route('/reminder')
 def reminder():
     if "user" not in session:
-        flash("Please log in to access notifications.", "warning")
-        return redirect(url_for("index"))
+        return jsonify({
+            "success": False,
+            "message": "Please log in to access notifications.",
+            "type": "warning",
+            "redirect": url_for('index')
+        }), 401
     return render_template('reminder.html')
 
 # Your Listings Route
 @app.route('/your-listings')
 def your_listings():
     if "user" not in session:
-        flash("Please log in to view your listings.", "warning")
-        return redirect(url_for("index"))
+        return jsonify({
+            "success": False,
+            "message": "Please log in to view your listings.",
+            "type": "warning",
+            "redirect": url_for('index')
+        }), 401
     
     # For now, display all products as example
     # In a real app, you would filter products by the logged-in user
@@ -963,6 +1066,15 @@ def customer_support():
     # Ensure user session exists (auto-create if needed)
     ensure_user_session()
     return render_template('CustomerSupport.html')
+
+# Admin Route
+@app.route('/admin')
+def admin():
+    # Ensure user session exists (auto-create if needed)
+    ensure_user_session()
+    # In production, you would check if user is an admin here
+    # For now, allow anyone to access for testing
+    return render_template('Admin.html')
 
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Message Seller - {{ item.name }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {{ ajax_style|safe }}
+  {{ jquery_script|safe }}
 </head>
 <body>
     <!--Navbar-->
@@ -441,6 +443,7 @@
             }
         }
     </script>
+  {{ ajax_script|safe }}
 </body>
 </html>
 

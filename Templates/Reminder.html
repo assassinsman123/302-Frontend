@@ -6,6 +6,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Reminders & Notifications</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {{ ajax_style|safe }}
+  {{ jquery_script|safe }}
 </head>
 <body class="reminder-page">
     <!--Navbar-->
@@ -1757,5 +1759,6 @@
             saveNotifications();
         };
     </script>
+  {{ ajax_script|safe }}
 </body>
 </html>

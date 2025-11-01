@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% if seller_name %}{{ seller_name }} - Seller Reviews{% else %}Seller Reviews{% endif %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    </head>
+      {{ ajax_style|safe }}
+  {{ jquery_script|safe }}
+</head>
     
     <body>
        <!--Navbar-->
@@ -146,7 +148,8 @@
                window.location.href = "{{ url_for('logout') }}";
            }
        </script>
-    </body>
+      {{ ajax_script|safe }}
+</body>
 </html>
 
 

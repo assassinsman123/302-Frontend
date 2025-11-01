@@ -4,13 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {{ ajax_style|safe }}
+  {{ jquery_script|safe }}
 </head>
 <body>
   <div class="login-container">
     <h2>Welcome Back</h2>
 
-    <form method="POST">
+    <form method="POST" action="{{ url_for('index') }}">
       <label for="email">Email</label>
       <input type="email" id="email" name="email" placeholder="example@email.com" required>
 
@@ -27,5 +29,6 @@
       </p>
     </form>
   </div>
+  {{ ajax_script|safe }}
 </body>
 </html>

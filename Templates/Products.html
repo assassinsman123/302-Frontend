@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marketplace</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {{ ajax_style|safe }}
+  {{ jquery_script|safe }}
 </head>
 <body>
   <!-- Navbar -->
@@ -22,53 +24,15 @@
     </div>
     
     <div class="nav-right">
-      <!-- User Icon - Dropdown -->
-      <div class="user-dropdown" id="userDropdown">
-        <span class="user-icon" onclick="toggleUserMenu()" title="User Menu">👤</span>
-        <div class="user-menu" id="userMenu">
-          <div class="user-menu-header">
-            <span class="user-avatar">👤</span>
-            <div class="user-info">
-              <span class="user-name">User</span>
-              <span class="user-status">● Online</span>
-            </div>
-          </div>
-          <div class="menu-divider"></div>
-          <div class="menu-actions">
-            <a href="{{ url_for('your_listings') }}" class="menu-item">
-              <span class="menu-icon">📦</span>
-              <span>Your Listings</span>
-            </a>
-            <a href="{{ url_for('reminder') }}" class="menu-item">
-              <span class="menu-icon">🔔</span>
-              <span>Notifications</span>
-            </a>
-            <a href="{{ url_for('customer_support') }}" class="menu-item">
-              <span class="menu-icon">🆘</span>
-              <span>Support</span>
-            </a>
-            <button onclick="logout()" class="menu-item logout-item">
-              <span class="menu-icon">🚪</span>
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Search and Filters Section -->
-  <div class="search-filter-section">
-    <div class="search-wrapper">
-      <div class="search-container">
+      <!-- Search in Navbar -->
+      <div class="nav-search-container">
         <span class="search-icon">🔍</span>
         <input type="text" id="searchInput" placeholder="Search products, categories, features..." onkeyup="performSearch()">
         <span class="clear-search" id="clearSearch" onclick="clearSearch()" style="display: none;">✕</span>
       </div>
-    </div>
-    
-    <div class="filter-wrapper">
-      <button class="filter-btn" id="categoriesBtn" onclick="toggleCategories()">
+      
+      <!-- Filter Button in Navbar -->
+      <button class="nav-filter-btn" id="categoriesBtn" onclick="toggleCategories()">
         <span class="filter-icon">🎛️</span>
         Filters
       </button>
@@ -113,11 +77,42 @@
           <button onclick="clearFilters()" class="clear-filters-btn">Clear All</button>
         </div>
       </div>
+      
+      <!-- User Icon - Dropdown -->
+      <div class="user-dropdown" id="userDropdown">
+        <span class="user-icon" onclick="toggleUserMenu()" title="User Menu">👤</span>
+        <div class="user-menu" id="userMenu">
+          <div class="user-menu-header">
+            <span class="user-avatar">👤</span>
+            <div class="user-info">
+              <span class="user-name">User</span>
+              <span class="user-status">● Online</span>
+            </div>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-actions">
+            <a href="{{ url_for('your_listings') }}" class="menu-item">
+              <span class="menu-icon">📦</span>
+              <span>Your Listings</span>
+            </a>
+            <a href="{{ url_for('reminder') }}" class="menu-item">
+              <span class="menu-icon">🔔</span>
+              <span>Notifications</span>
+            </a>
+            <a href="{{ url_for('customer_support') }}" class="menu-item">
+              <span class="menu-icon">🆘</span>
+              <span>Support</span>
+            </a>
+            <button onclick="logout()" class="menu-item logout-item">
+              <span class="menu-icon">🚪</span>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-  
+  </nav>
 
-  
   <!-- Search Results Info -->
   <div class="search-results-info" id="searchInfo" style="display: none;"></div>
   
@@ -127,7 +122,7 @@
   <!-- Products Grid -->
   <div class="products" id="productsContainer">
     {% for product in products %}
-    <div class="product" data-name="{{ product.name.lower() }}" data-category="{{ product.category.lower() }}" data-price="{{ product.price }}" data-features="{{ product.features.lower() }}" data-condition="{{ product.condition.lower() if product.condition else 'good' }}" data-seller-id="{{ product.seller_id }}" data-seller-name="{{ product.seller_name }}">
+    <div class="product" data-name="{{ product.name.lower() }}" data-category="{{ product.category.lower() }}" data-price="{{ product.price }}" data-features="{{ product.features.lower() }}" data-condition="{{ product.condition.lower() if product.condition else 'good' }}" data-sender-id="{{ product.sender_id }}" data-receiver-id="{{ product.receiver_id }}" data-seller-id="{{ product.seller_id }}" data-seller-name="{{ product.seller_name }}">
       <a href="{{ url_for('message_seller', item_id=loop.index0) }}" class="product-image-link">
         <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
       </a>
@@ -142,9 +137,13 @@
           </a>
         </div>
         <div class="product-ids">
-          <span class="id-badge seller-id-badge" title="Seller ID">
+          <span class="id-badge sender-id-badge" title="Your User ID">
+            <span class="badge-icon">👤</span>
+            Sender: {{ product.sender_id }}
+          </span>
+          <span class="id-badge receiver-id-badge" title="Seller ID">
             <span class="badge-icon">🆔</span>
-            Seller: {{ product.seller_id }}
+            Receiver: {{ product.receiver_id }}
           </span>
         </div>
       </div>
@@ -392,26 +391,23 @@
 
     // Add current user info to products for debugging
     document.addEventListener('DOMContentLoaded', function() {
-      const currentUser = localStorage.getItem('currentUser') || 'user_' + Date.now();
-      if (!localStorage.getItem('currentUser')) {
-        localStorage.setItem('currentUser', currentUser);
-      }
-      
-      // Add receiver ID info to each product
+      // Get products with sender/receiver info from backend
       const products = document.querySelectorAll('.product');
       products.forEach(product => {
+        const senderId = product.dataset.senderId;
+        const receiverId = product.dataset.receiverId;
         const sellerId = product.dataset.sellerId;
         const sellerName = product.dataset.sellerName;
         
         // Add tooltip showing conversation participants
         const productInfo = product.querySelector('.product-info');
-        if (productInfo && sellerId) {
+        if (productInfo && receiverId) {
           const conversationInfo = document.createElement('div');
           conversationInfo.className = 'conversation-info';
           conversationInfo.innerHTML = `
             <small class="info-label">💬 Conversation:</small>
             <small class="info-text">You ↔️ ${sellerName}</small>
-            <small class="info-ids">Sender: ${currentUser} | Receiver: ${sellerId}</small>
+            <small class="info-ids">Sender: ${senderId} | Receiver: ${receiverId}</small>
           `;
           productInfo.appendChild(conversationInfo);
         }
@@ -423,5 +419,6 @@
       this.select(); // Select all text when focused
     });
   </script>
+  {{ ajax_script|safe }}
 </body>
 </html>
